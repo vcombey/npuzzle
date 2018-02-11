@@ -7,12 +7,6 @@ use std::str::FromStr;
 
 use failure::Error;
 
-// This is a new error type that you've created. It represents the ways a
-// toolchain could be invalid.
-//
-// The custom derive for Fail derives an impl of both Fail and Display.
-// We don't do any other magic like creating new types.
-
 #[derive(Debug, Fail, PartialEq)]
 enum ParseNpuzzleError {
     #[fail(display = "invalid dimension")]
@@ -38,8 +32,8 @@ impl FromStr for Npuzzle {
 
         // remove comments
         let mut lines = s.lines().map(|l| {
-            l.get(..l.trim().find('#').unwrap_or(l.len()))
-                .unwrap() // can't fail
+            l.get(..l.find('#').unwrap_or(l.len()))
+                .unwrap().trim() // can't fail
         }).filter(|l| l != &"");
 
         // get dimension
@@ -72,8 +66,8 @@ mod test {
     #[test]
     fn tabulations() {
         let s = "# This puzzle is solvable
-    3 #lol
-5 1 0 #1 2 3
+3#
+ 5 1 0 #1 2 3
 8 4 6            #
 3 7 2";
         assert_eq!(s.parse::<Npuzzle>().unwrap(), Npuzzle { n: 3, pieces: vec![5, 1, 0, 8, 4, 6, 3, 7, 2] });
