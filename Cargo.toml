@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["vcombey <vcombey@student.42.fr>"]
 
 [dependencies]
+failure = "0.1.1"
