@@ -39,6 +39,12 @@ impl FromStr for Taquin {
 
         let pieces = pieces.into_iter().flat_map(|l| l).collect::<Vec<u64>>();
 
+        for i in 0..n * n {
+            if !pieces.iter().any(|&k| k == i as u64) {
+                return Err(ParseTaquinError::MissingNb(i as u64));
+            }
+        }
+
         Ok(Taquin { n, pieces })
     }
 }
@@ -49,11 +55,18 @@ pub enum ParseTaquinError {
     BadNbColonne,
     BadNbLine,
     BadNoTakin(ParseIntError),
+    MissingNb(u64),
 }
 
 impl fmt::Display for ParseTaquinError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "coucou")
+        match *self {
+            ParseTaquinError::Empty => write!(f, "the taquin is empty"),
+            ParseTaquinError::BadNbColonne => write!(f, "bad number of colonne"),
+            ParseTaquinError::BadNbLine => write!(f, "bad number of line"),
+            ParseTaquinError::BadNoTakin(ref e) => write!(f, "{}", e.description()),
+            ParseTaquinError::MissingNb(n) => write!(f, "missing nb: {}", n),
+        }
     }
 }
 
@@ -64,6 +77,7 @@ impl Error for ParseTaquinError {
             ParseTaquinError::BadNbColonne => "bad number of colonne",
             ParseTaquinError::BadNbLine => "bad number of line",
             ParseTaquinError::BadNoTakin(ref e) => e.description(),
+            ParseTaquinError::MissingNb(_) => "missing nb",
         }
     }
 }
@@ -73,6 +87,7 @@ impl From<ParseIntError> for ParseTaquinError {
         ParseTaquinError::BadNoTakin(error)
     }
 }
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -139,5 +154,13 @@ mod test {
                    8 4 6
                    3 7 2";
         assert_eq!(s.parse::<Taquin>(), Err(ParseTaquinError::BadNbLine));
+    }
+    #[test]
+    fn missing_nb() {
+        let s = "3
+                   1 5 0
+                   9 4 6
+                   3 7 2";
+        assert_eq!(s.parse::<Taquin>(), Err(ParseTaquinError::MissingNb(8)));
     }
 }
