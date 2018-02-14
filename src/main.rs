@@ -30,4 +30,5 @@ fn main() {
     println!("{:?}", taquin);
     let solver = Solver::new(taquin);
     println!("{}", solver.is_solved());
+    println!("{}", solver.is_solvable());
 }

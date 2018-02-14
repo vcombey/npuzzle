@@ -6,7 +6,7 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub struct Taquin {
     n: usize,
-    pieces: Vec<u64>,
+    pub pieces: Vec<u64>,
 }
 
 impl Taquin {
@@ -95,6 +95,12 @@ impl Taquin {
     }
     pub fn dim(&self) -> usize {
         self.n
+    }
+    /// calc nb move to put the zero at the center
+    pub fn nb_move_zero(&self) -> u64 {
+        let index_pieces: i64 = self.pieces.iter().position(|&x| x == 0).unwrap() as i64;
+        let n: i64 = self.n as i64;
+        (n / 2 - index_pieces % n).abs() as u64 + (index_pieces / n - n / 2).abs() as u64
     }
 }
 
