@@ -1,5 +1,6 @@
 extern crate npuzzle;
 use npuzzle::taquin::Taquin;
+use npuzzle::solver::Solver;
 use std::fs::File;
 use std::io::Read;
 use std::env;
@@ -24,7 +25,9 @@ fn main() {
             return;
         }
     };
-    println!("{}", s);
+    //   println!("{}", s);
     let taquin = s.parse::<Taquin>().unwrap();
     println!("{:?}", taquin);
+    let solver = Solver::new(taquin);
+    println!("{}", solver.is_solved());
 }
