@@ -25,10 +25,12 @@ fn main() {
             return;
         }
     };
-    //   println!("{}", s);
+       println!("{}", s);
+    
     let taquin = s.parse::<Taquin>().unwrap();
-    println!("{:?}", taquin);
+    //println!("{:?}", taquin);
     let solver = Solver::new(taquin);
-    println!("{}", solver.is_solved());
-    println!("{}", solver.is_solvable());
+    //println!("{}", solver.is_solved());
+    println!("solvability {}", solver.is_solvable());
+    
 }

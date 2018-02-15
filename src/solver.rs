@@ -24,11 +24,9 @@ impl Solver {
         let mut pieces = self.taquin.pieces.clone();
         for (index_spiral, nb) in self.spiral.iter().enumerate() {
             let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
-            let debug = Taquin::new(self.taquin.dim(), pieces.clone());
-            println!("{}", debug);
 
             if index_spiral != index_pieces {
-                trans_count += 1;
+                trans_count+=1;
                 pieces.swap(index_pieces, index_spiral);
             }
         }
@@ -40,8 +38,9 @@ impl Solver {
         let nb_move = self.taquin.nb_move_zero();
 
         println!("{}", nb_trans);
+        println!("{}", nb_move);
         // the taquin is solvable if nb_trans and nb_move have the same parity
-        nb_trans + nb_move % 2 == 0
+        (nb_trans + nb_move) % 2 == 0
     }
 }
 
@@ -62,13 +61,13 @@ mod test {
     }
     #[test]
     fn solvable() {
-        let taquin = Taquin::new(3, vec![0, 8, 3, 1, 6, 4, 5, 7, 2]);
+        let taquin = Taquin::new(3, vec![0,8,3,1,6,4,5,7,2]);
         let solver = Solver::new(taquin);
         assert!(solver.is_solvable());
     }
     #[test]
     fn unsolvable() {
-        let taquin = Taquin::new(3, vec![1, 7, 8, 2, 0, 5, 3, 4, 6]);
+        let taquin = Taquin::new(3, vec![1,7,8,2,0,5,3,4,6]);
         let solver = Solver::new(taquin);
         assert!(!solver.is_solvable());
     }

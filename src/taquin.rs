@@ -59,7 +59,6 @@ impl Taquin {
                         }
                     }
                     Dir::Up => {
-                        /* don't go up on the the first case */
                         if i > self.n {
                             Some(i - self.n)
                         } else {
@@ -69,14 +68,15 @@ impl Taquin {
                 }
             }
         }
+
         let mut i = 0;
-        let mut count: u64 = 0;
+        let mut count: u64 = 1;
         let mut m = Move { dir: Dir::Right, n };
-        while (count as usize) < n * n - 1 {
+        while (count as usize) < n * n {
             loop {
+                pieces[i] = count;
                 i = m.next(i).unwrap();
                 count += 1;
-                pieces[i] = count;
                 match m.next(i) {
                     None => {
                         break;
@@ -100,7 +100,7 @@ impl Taquin {
     pub fn nb_move_zero(&self) -> u64 {
         let index_pieces: i64 = self.pieces.iter().position(|&x| x == 0).unwrap() as i64;
         let n: i64 = self.n as i64;
-        (n / 2 - index_pieces % n).abs() as u64 + (index_pieces / n - n / 2).abs() as u64
+        (n / 2 - index_pieces % n).abs() as u64 + ((n - 1)/ 2 - index_pieces / n).abs() as u64
     }
 }
 
@@ -298,37 +298,34 @@ mod test {
                 n: 1,
                 pieces: vec![0],
             }
-        );
+            );
         assert_eq!(
             Taquin::spiral(2),
             Taquin {
                 n: 2,
-                pieces: vec![0, 1, 3, 2],
+                pieces: vec![1,2,0,3],
             }
-        );
+            );
         assert_eq!(
             Taquin::spiral(3),
             Taquin {
                 n: 3,
-                pieces: vec![0, 1, 2, 7, 8, 3, 6, 5, 4],
+                pieces: vec![1,2,3,8,0,4,7,6,5],
             }
-        );
+            );
         assert_eq!(
             Taquin::spiral(4),
             Taquin {
                 n: 4,
-                pieces: vec![0, 1, 2, 3, 11, 12, 13, 4, 10, 15, 14, 5, 9, 8, 7, 6],
+                pieces: vec![1,2,3,4,12,13,14,5,11,0,15,6,10,9,8,7],
             }
-        );
+            );
         assert_eq!(
             Taquin::spiral(5),
             Taquin {
                 n: 5,
-                pieces: vec![
-                    0, 1, 2, 3, 4, 15, 16, 17, 18, 5, 14, 23, 24, 19, 6, 13, 22, 21, 20, 7, 12, 11,
-                    10, 9, 8,
-                ],
+                pieces: vec![1,2,3,4,5,16,17,18,19,6,15,24,0,20,7,14,23,22,21,8,13,12,11,10,9],
             }
-        );
+            );
     }
 }
