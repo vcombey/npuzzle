@@ -28,7 +28,7 @@ impl Iterator for Dir {
 impl Dir {
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Taquin {
     n: usize,
     pieces: Vec<u64>,

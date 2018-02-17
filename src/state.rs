@@ -27,7 +27,7 @@ struct StateIter<'a> {
 
 impl State {
 	pub fn new(predecessor: Option<u64>, taquin: Taquin) -> State {
-		let hash = DefaultHasher::new();
+		let mut hash = DefaultHasher::new();
 		taquin.hash(&mut hash);
 		
 		State {
@@ -67,10 +67,17 @@ impl State {
 		unimplemented!()
 	}
 	
-	pub fn iter_on_possible_states(&self) -> Iter<State> {
-		unimplemented!()
-	}
+	// pub fn iter_on_possible_states(&self) -> State {
+	// 	unimplemented!()
+	// }
 }
+
+// impl Hash for State {
+// 	fn hash<H>(&self, state: &mut H)
+// 		where H: Hasher {
+// 		self.taquin.hash(state)
+// 	}
+// }
 
 impl PartialOrd for State {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {

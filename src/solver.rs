@@ -16,10 +16,11 @@ impl Solver {
 	
     pub fn new(taquin: Taquin, heuristic: Box<FnOnce(&State, &Taquin) -> f32>) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
-		open_set.push(State::new(None, taquin));//clone ?
+		open_set.push(State::new(None, taquin.clone()));//clone ?
+		let spiral = Taquin::spiral(taquin.dim());
         Solver {
             taquin,
-            spiral: Taquin::spiral(taquin.dim()),
+            spiral,
 			heuristic,
 			open_set,
 			closed_set: HashMap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE),
@@ -49,7 +50,7 @@ impl Solver {
 	}
 
 	/// Returns weither or not the considered state is in the closed set
-	fn is_in_closed_set(&self, state: &State) -> bool {
+	fn is_in_closed_set(&mut self, state: &State) -> bool {
 		use std::collections::hash_map::Entry::*;
 		match self.closed_set.entry(state.get_key()) {
 			Vacant(_) => false,
@@ -61,19 +62,16 @@ impl Solver {
 	pub fn astar(&mut self) {
 		let mut success = false;
 		while self.open_set.len() != 0 {
-			let current_state = self.open_set.peek().expect("Tried to peek none existing open state");
-			if current_state.is_solved() {
+			if self.open_set.peek().expect("Tried to peek none existing open state").is_solved() {
 				success = true;
 			} else {
 				let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
-//				self.closed_set.insert(self.closed_set.hasher(current_state.taquin), current_state);
+				self.closed_set.insert(current_state.get_key(), current_state);
 				for state in current_state.iter_on_possible_states() {
-					// if self.is_in_closed_set(state) {
-					// 	continue ;
-					// }
-					
-					if self.is_in_open_set(state) == false
-					{
+					if self.is_in_closed_set(state) {
+						continue ;
+					}					
+					if self.is_in_open_set(state) == false {
 						state.set_predecessor(&current_state);
 						state.set_cost(current_state.cost + 1.0);
 						self.open_set.push(*state);//clone ?
