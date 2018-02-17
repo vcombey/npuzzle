@@ -28,12 +28,6 @@ impl Solver {
     }
 
 	/// Returns weither or not the current state of the taquin is solved
-    pub fn is_solved(&self) -> bool {
-        self.taquin
-            .iter()
-            .zip(self.spiral.iter())
-            .all(|(x, y)| x == y)
-    }
     pub fn is_solvable(&self) -> bool {
         let nb_trans = self.taquin.nb_transposition(&self.spiral);
         let nb_move = self.taquin.nb_move_zero();

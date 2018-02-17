@@ -26,6 +26,9 @@ impl Iterator for Dir {
 }
 
 impl Dir {
+    pub fn new() -> Self{
+        Dir::Up
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -153,6 +156,11 @@ impl Taquin {
             }
         }
         trans_count
+    }
+    pub fn is_solved(&self, spiral: &Taquin) -> bool {
+        self.pieces.iter()
+            .zip(spiral.iter())
+            .all(|(x, y)| x == y)
     }
 }
 

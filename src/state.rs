@@ -1,4 +1,5 @@
 use taquin::Taquin;
+use taquin::Dir;
 use	std::f32::INFINITY;
 use	std::cmp::{Ord, Ordering, Eq, PartialEq};
 use std::hash::{Hash, Hasher};
@@ -14,7 +15,7 @@ pub struct State {
 	taquin: Taquin,
 
 	/// Hash of predecessor
-	predecessor: Option<u64>,
+	predecessor: Option<Dir>,
 	
 	/// Key of the State
 	key: u64,
@@ -26,7 +27,7 @@ struct StateIter<'a> {
 }
 
 impl State {
-	pub fn new(predecessor: Option<u64>, taquin: Taquin) -> State {
+	pub fn new(predecessor: Option<Dir>, taquin: Taquin) -> State {
 		let mut hash = DefaultHasher::new();
 		taquin.hash(&mut hash);
 		
@@ -62,48 +63,71 @@ impl State {
 		self.predecessor = Some(predecessor.key)
 	}
 	
-	pub fn is_solved(&self) -> bool {
-		//		self.taquin.is_solved()
-		unimplemented!()
+	pub fn get_taquin(&self) -> &Taquin {
+		&self.taquin
+	}
+
+	pub fn is_solved(&self, spiral: &Taquin) -> bool {
+		self.taquin.is_solved(spiral)
 	}
 	
-	// pub fn iter_on_possible_states(&self) -> State {
-	// 	unimplemented!()
-	// }
+	pub fn iter_on_possible_states<'a>(&self) -> Neighbours<'a> {
+        Neighbours::new(&self)
+	}
 }
 
-// impl Hash for State {
-// 	fn hash<H>(&self, state: &mut H)
-// 		where H: Hasher {
-// 		self.taquin.hash(state)
-// 	}
-// }
+struct Neighbours<'a> {
+    state: &'a State,
+    dir: Dir,
+}
+
+impl<'a> Neighbours<'a> {
+    pub fn new(state: &'a State) -> Self {
+        Neighbours {
+            state,
+            dir: Dir::new(),
+        }
+    }
+}
+
+impl<'a> Iterator for Neighbours<'a> {
+    type Item = State;
+    fn next(&mut self) -> Option<State> {
+       let taquin_next = loop {
+            self.dir.next()?;
+            if let Some(t) = self.state.get_taquin().move_piece(self.dir) {
+                break t;
+            }
+       };
+       Some(State::new(Some(self.dir), taquin_next))
+    }
+}
 
 impl PartialOrd for State {
-	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		Some(self.cmp(other))
-	}
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Ord for State {
-	/// Implementation of cmp in reverse order since we want a min_heap
-	// Be careful here
-	fn cmp(&self, other: &Self) -> Ordering {
-		match self.fcost <= other.fcost {
-			true => Ordering::Greater,
-			false => Ordering::Less,
-		}
-	}
+    /// Implementation of cmp in reverse order since we want a min_heap
+    // Be careful here
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.fcost <= other.fcost {
+            true => Ordering::Greater,
+            false => Ordering::Less,
+        }
+    }
 }
 
 impl Eq for State {} // derive ? 
 
 impl PartialEq for State {
-	fn eq(&self, other: &Self) -> bool {
-		self.fcost == other.fcost
-	}
+    fn eq(&self, other: &Self) -> bool {
+        self.fcost == other.fcost
+    }
 
-	fn ne(&self, other: &Self) -> bool {
-		self.fcost != other.fcost
-	}
+    fn ne(&self, other: &Self) -> bool {
+        self.fcost != other.fcost
+    }
 }
