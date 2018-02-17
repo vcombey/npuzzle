@@ -2,11 +2,18 @@ use std::num::ParseIntError;
 use std::str::FromStr;
 use std::error::Error;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
-#[derive(Debug, PartialEq)]
 pub struct Taquin {
     n: usize,
     pub pieces: Vec<u64>,
+}
+
+impl Hash for Taquin {
+	fn hash<H>(&self, state: &mut H)
+		where H: Hasher {
+		self.pieces.hash(state)
+	}
 }
 
 impl Taquin {
@@ -93,6 +100,8 @@ impl Taquin {
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
+	
+	/// Get current dimension of the taquin
     pub fn dim(&self) -> usize {
         self.n
     }
