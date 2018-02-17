@@ -19,22 +19,8 @@ impl Solver {
             .zip(self.spiral.iter())
             .all(|(x, y)| x == y)
     }
-    fn nb_transposition(&self) -> u64 {
-        let mut trans_count = 0;
-        let mut pieces = self.taquin.pieces.clone();
-        for (index_spiral, nb) in self.spiral.iter().enumerate() {
-            let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
-
-            if index_spiral != index_pieces {
-                trans_count+=1;
-                pieces.swap(index_pieces, index_spiral);
-            }
-        }
-        trans_count
-    }
     pub fn is_solvable(&self) -> bool {
-        let n = self.taquin.dim();
-        let nb_trans = self.nb_transposition();
+        let nb_trans = self.taquin.nb_transposition(&self.spiral);
         let nb_move = self.taquin.nb_move_zero();
 
         println!("{}", nb_trans);
