@@ -66,6 +66,10 @@ impl State {
 		//		self.taquin.is_solved()
 		unimplemented!()
 	}
+	
+	pub fn iter_on_possible_states(&self) -> Iter<State> {
+		unimplemented!()
+	}
 }
 
 impl PartialOrd for State {

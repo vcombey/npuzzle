@@ -67,7 +67,7 @@ impl Solver {
 			} else {
 				let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
 //				self.closed_set.insert(self.closed_set.hasher(current_state.taquin), current_state);
-				for state in current_state.iter_mut() {
+				for state in current_state.iter_on_possible_states() {
 					// if self.is_in_closed_set(state) {
 					// 	continue ;
 					// }
@@ -107,25 +107,25 @@ mod test {
     #[test]
     fn solved() {
         let taquin = Taquin::spiral(42);
-        let solver = Solver::new(taquin);
+        let solver = Solver::new(taquin, Box::new(|ref state, ref spiral| { 1.0 }));
         assert!(solver.is_solved());
     }
     #[test]
     fn unsolved() {
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
-        let solver = Solver::new(taquin);
+        let solver = Solver::new(taquin, Box::new(|ref state, ref spiral| { 1.0 }));
         assert!(!solver.is_solved());
     }
     #[test]
     fn solvable() {
         let taquin = Taquin::new(3, vec![0,8,3,1,6,4,5,7,2]);
-        let solver = Solver::new(taquin);
+        let solver = Solver::new(taquin, Box::new(|ref state, ref spiral| { 1.0 }));
         assert!(solver.is_solvable());
     }
     #[test]
     fn unsolvable() {
         let taquin = Taquin::new(3, vec![1,7,8,2,0,5,3,4,6]);
-        let solver = Solver::new(taquin);
+        let solver = Solver::new(taquin, Box::new(|ref state, ref spiral| { 1.0 }));
         assert!(!solver.is_solvable());
     }
 }
