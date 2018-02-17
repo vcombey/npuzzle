@@ -2,6 +2,7 @@ use std::num::ParseIntError;
 use std::str::FromStr;
 use std::error::Error;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 
 #[derive(Copy, Clone)]
 pub enum Dir {
@@ -32,6 +33,13 @@ pub struct Taquin {
     n: usize,
     pieces: Vec<u64>,
     cur_pos: usize,
+}
+
+impl Hash for Taquin {
+	fn hash<H>(&self, state: &mut H)
+		where H: Hasher {
+		self.pieces.hash(state)
+	}
 }
 
 impl Taquin {
@@ -122,6 +130,8 @@ impl Taquin {
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
+	
+	/// Get current dimension of the taquin
     pub fn dim(&self) -> usize {
         self.n
     }
