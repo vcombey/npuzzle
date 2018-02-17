@@ -4,9 +4,35 @@ use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
+#[derive(Copy, Clone)]
+pub enum Dir {
+    Right,
+    Up,
+    Down,
+    Left,
+}
+
+impl Iterator for Dir {
+    type Item = Dir;
+    fn next(&mut self) -> Option<Self> {
+       *self = match *self {
+            Dir::Right => Dir::Down,
+            Dir::Down => Dir::Left,
+            Dir::Left => Dir::Up,
+            Dir::Up => {return None},
+       };
+       Some(*self)
+    }
+}
+
+impl Dir {
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Taquin {
     n: usize,
-    pub pieces: Vec<u64>,
+    pieces: Vec<u64>,
+    cur_pos: usize,
 }
 
 impl Hash for Taquin {
@@ -18,84 +44,88 @@ impl Hash for Taquin {
 
 impl Taquin {
     pub fn new(n: usize, pieces: Vec<u64>) -> Self {
+        //TODO: remove for opti
+        for i in 0..n * n {
+            if !pieces.iter().any(|&k| k == i as u64) {
+                panic!("missing nb in pieces");
+            }
+        }
+        let cur_pos = pieces.iter().position(|&x| x == 0).unwrap();
         assert_eq!(pieces.len(), n * n);
-        Taquin { n, pieces }
+        Taquin {
+            n,
+            pieces,
+            cur_pos,
+        }
+    }
+    /// get indice of piece next 'i' in direction 'dir'.
+    fn get_index(dir: &Dir, i: usize, n: usize) -> Option<usize> {
+        match *dir {
+            Dir::Right => {
+                if (i + 1) % n != 0 {
+                    Some(i + 1)
+                } else {
+                    None
+                }
+            }
+            Dir::Down => {
+                if i + n < n * n {
+                    Some(i + n)
+                } else {
+                    None
+                }
+            }
+            Dir::Left => {
+                if (i - 1) % n != n - 1 {
+                    Some(i - 1)
+                } else {
+                    None
+                }
+            }
+            Dir::Up => {
+                if i >= n {
+                    Some(i - n)
+                } else {
+                    None
+                }
+            }
+        }
+    }
+    pub fn move_piece(&self, dir: Dir) -> Option<Self> {
+        let index_to_go = Taquin::get_index(&dir, self.cur_pos, self.n)?;
+        let mut new_pieces = self.pieces.clone();
+        new_pieces.swap(self.cur_pos, index_to_go);
+        Some(Taquin {
+            n: self.n,
+            pieces: new_pieces,
+            cur_pos: index_to_go,
+        })
     }
     pub fn spiral(n: usize) -> Self {
         let mut pieces: Vec<u64> = vec![0; n * n];
-        enum Dir {
-            Right,
-            Up,
-            Down,
-            Left,
-        }
-        struct Move {
-            dir: Dir,
-            n: usize,
-        }
-        impl Move {
-            fn change_dir(&mut self) {
-                self.dir = match self.dir {
-                    Dir::Right => Dir::Down,
-                    Dir::Down => Dir::Left,
-                    Dir::Left => Dir::Up,
-                    Dir::Up => Dir::Right,
-                }
-            }
-            fn next(&self, i: usize) -> Option<usize> {
-                match self.dir {
-                    Dir::Right => {
-                        if (i + 1) % self.n != 0 {
-                            Some(i + 1)
-                        } else {
-                            None
-                        }
-                    }
-                    Dir::Down => {
-                        if i + self.n < self.n * self.n {
-                            Some(i + self.n)
-                        } else {
-                            None
-                        }
-                    }
-                    Dir::Left => {
-                        if (i - 1) % self.n != self.n - 1 {
-                            Some(i - 1)
-                        } else {
-                            None
-                        }
-                    }
-                    Dir::Up => {
-                        if i > self.n {
-                            Some(i - self.n)
-                        } else {
-                            None
-                        }
-                    }
-                }
-            }
-        }
-
         let mut i = 0;
         let mut count: u64 = 1;
-        let mut m = Move { dir: Dir::Right, n };
+        let mut dir = Dir::Right;
         while (count as usize) < n * n {
             loop {
                 pieces[i] = count;
-                i = m.next(i).unwrap();
+                i = Taquin::get_index(&dir, i, n).unwrap();
                 count += 1;
-                match m.next(i) {
+                match Taquin::get_index(&dir, i, n) {
                     None => {
                         break;
                     }
-                    Some(i) => if pieces[i] != 0 {
+                    Some(i) => if pieces[i] != 0 || i == 0 {
                         break;
                     },
                 }
             }
-            m.change_dir();
+            dir = match dir.next() {
+                None => Dir::Right,
+                Some(d) => d,
+            }
         }
-        Taquin { n, pieces }
+        Self::new(n, pieces)
     }
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
@@ -110,6 +140,19 @@ impl Taquin {
         let index_pieces: i64 = self.pieces.iter().position(|&x| x == 0).unwrap() as i64;
         let n: i64 = self.n as i64;
         (n / 2 - index_pieces % n).abs() as u64 + ((n - 1)/ 2 - index_pieces / n).abs() as u64
+    }
+    pub fn nb_transposition(&self, spiral: &Taquin) -> u64 {
+        let mut trans_count = 0;
+        let mut pieces = self.pieces.clone();
+        for (index_spiral, nb) in spiral.iter().enumerate() {
+            let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
+
+            if index_spiral != index_pieces {
+                trans_count+=1;
+                pieces.swap(index_pieces, index_spiral);
+            }
+        }
+        trans_count
     }
 }
 
@@ -143,7 +186,7 @@ impl FromStr for Taquin {
                     .unwrap()
                     .trim() // can't fail
             })
-            .filter(|l| l != &"");
+        .filter(|l| l != &"");
 
         // get dimension
         let n: usize = lines.next().ok_or(ParseTaquinError::Empty)?.trim().parse()?;
@@ -172,7 +215,7 @@ impl FromStr for Taquin {
             }
         }
 
-        Ok(Taquin { n, pieces })
+        Ok(Taquin::new(n, pieces))
     }
 }
 
@@ -244,11 +287,11 @@ mod test {
             3 7 2";
         assert_eq!(
             s.parse::<Taquin>().unwrap(),
-            Taquin {
-                n: 3,
-                pieces: vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-            }
-        );
+            Taquin::new(
+                3,
+                vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
+                )
+            );
     }
     #[test]
     fn tabulations() {
@@ -259,11 +302,11 @@ mod test {
             3 7 2";
         assert_eq!(
             s.parse::<Taquin>().unwrap(),
-            Taquin {
-                n: 3,
-                pieces: vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-            }
-        );
+            Taquin::new(
+                3,
+                vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
+                )
+            );
     }
     #[test]
     fn bad_integer() {
@@ -303,38 +346,58 @@ mod test {
     fn spiral() {
         assert_eq!(
             Taquin::spiral(1),
-            Taquin {
-                n: 1,
-                pieces: vec![0],
-            }
+            Taquin::new(
+                1,
+                vec![0],
+                )
             );
         assert_eq!(
             Taquin::spiral(2),
-            Taquin {
-                n: 2,
-                pieces: vec![1,2,0,3],
-            }
+            Taquin::new(
+                2,
+                vec![1,2,0,3],
+                )
             );
         assert_eq!(
             Taquin::spiral(3),
-            Taquin {
-                n: 3,
-                pieces: vec![1,2,3,8,0,4,7,6,5],
-            }
+            Taquin::new(
+                3,
+                vec![1,2,3,8,0,4,7,6,5],
+                )
             );
         assert_eq!(
             Taquin::spiral(4),
-            Taquin {
-                n: 4,
-                pieces: vec![1,2,3,4,12,13,14,5,11,0,15,6,10,9,8,7],
-            }
+            Taquin::new(
+                4,
+                vec![1,2,3,4,12,13,14,5,11,0,15,6,10,9,8,7],
+                )
             );
         assert_eq!(
             Taquin::spiral(5),
-            Taquin {
-                n: 5,
-                pieces: vec![1,2,3,4,5,16,17,18,19,6,15,24,0,20,7,14,23,22,21,8,13,12,11,10,9],
-            }
+            Taquin::new(
+                5,
+                vec![1,2,3,4,5,16,17,18,19,6,15,24,0,20,7,14,23,22,21,8,13,12,11,10,9],
+                )
             );
+    }
+    #[test]
+    fn move_piece() {
+        let s = "3
+            1 5 0
+            8 4 6
+            3 7 2";
+        let s_down = "3
+            1 5 6
+            8 4 0
+            3 7 2";
+        let t = s.parse::<Taquin>().unwrap();
+        let t_down = s_down.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Down).unwrap(), t_down);
+        let s = "3
+            1 5 2
+            8 4 6
+            3 7 0";
+        let t = s.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Down), None);
     }
 }
