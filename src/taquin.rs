@@ -408,4 +408,14 @@ mod test {
         let t = s.parse::<Taquin>().unwrap();
         assert_eq!(t.move_piece(Dir::Down), None);
     }
+    #[test]
+    fn solved() {
+        let taquin = Taquin::spiral(42);
+        assert!(taquin.is_solved(&taquin));
+    }
+    #[test]
+    fn unsolved() {
+        let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
+        assert!(!taquin.is_solved(&taquin));
+    }
 }

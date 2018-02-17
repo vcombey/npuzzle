@@ -14,11 +14,11 @@ pub struct State {
 	/// Actual Taquin state
 	taquin: Taquin,
 
-	/// Hash of predecessor
+	/// Dir of predecessor
 	predecessor: Option<Dir>,
 	
 	/// Key of the State
-	key: u64,
+	hash: u64,
 }
 
 struct StateIter<'a> {
@@ -36,18 +36,14 @@ impl State {
 			fcost: INFINITY,
 			taquin,
 			predecessor, 
-			key: hash.finish(), // rewrite this
+			hash: hash.finish(), // rewrite this
 		}
 	}
 
-	pub fn get_key(&self) -> u64 {
-		self.key
+	pub fn get_hash(&self) -> u64 {
+		self.hash
 	}
 	
-	// pub fn create_states(&self) -> StateIter {
-
-	// }
-
 	/// Set state's cost to new_cost
 	pub fn set_cost(&mut self, new_cost: f32) {
 		self.cost = new_cost;
@@ -58,11 +54,7 @@ impl State {
 		self.fcost = new_fcost;
 	}
 
-	/// Set the state's predecessor to `predecessor`
-	pub fn set_predecessor(&mut self, predecessor: &State) {
-		self.predecessor = Some(predecessor.key)
-	}
-	
+	/// Get the inner taquin of state
 	pub fn get_taquin(&self) -> &Taquin {
 		&self.taquin
 	}
@@ -71,12 +63,19 @@ impl State {
 		self.taquin.is_solved(spiral)
 	}
 	
-	pub fn iter_on_possible_states<'a>(&self) -> Neighbours<'a> {
+	pub fn iter_on_possible_states<'a>(&'a self) -> Neighbours<'a> {
         Neighbours::new(&self)
 	}
 }
 
-struct Neighbours<'a> {
+impl Hash for State {
+	fn hash<H>(&self, state: &mut H)
+		where H: Hasher {
+		self.taquin.hash(state);
+	}
+}
+
+pub struct Neighbours<'a> {
     state: &'a State,
     dir: Dir,
 }
@@ -124,10 +123,10 @@ impl Eq for State {} // derive ?
 
 impl PartialEq for State {
     fn eq(&self, other: &Self) -> bool {
-        self.fcost == other.fcost
+		self.taquin.eq(&other.taquin)
     }
 
     fn ne(&self, other: &Self) -> bool {
-        self.fcost != other.fcost
+		self.taquin.ne(&other.taquin)
     }
 }
