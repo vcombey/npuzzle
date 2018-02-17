@@ -93,6 +93,8 @@ impl Taquin {
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
+	
+	/// Get current dimension of the taquin
     pub fn dim(&self) -> usize {
         self.n
     }

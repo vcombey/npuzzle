@@ -1,16 +1,28 @@
 use taquin::Taquin;
+use	state::State;
+use	std::collections::{HashMap, BinaryHeap};
 
 pub struct Solver {
     taquin: Taquin,
     spiral: Taquin,
+	heuristic: Box<FnOnce(&Taquin, &Taquin) -> f32>,
+	open_set: BinaryHeap<State>,
+	closed_set: HashMap<State>,
 }
 
 impl Solver {
-    pub fn new(taquin: Taquin) -> Self {
-        let n = taquin.dim();
+	const DEFAULT_OPEN_SET_SIZE: usize = 65536;
+	const DEFAULT_CLOSED_SET_SIZE: usize = 65536;
+	
+    pub fn new(taquin: Taquin, heuristic: Box<FnOnce(&Taquin, &Taquin) -> f32>) -> Self {
+    	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
+		open.push(taquin.clone());//clone ?
         Solver {
             taquin,
             spiral: Taquin::spiral(n),
+			heuristic,
+			open_set,
+			closed_set: HashMap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE),
         }
     }
     pub fn is_solved(&self) -> bool {
@@ -42,6 +54,54 @@ impl Solver {
         // the taquin is solvable if nb_trans and nb_move have the same parity
         (nb_trans + nb_move) % 2 == 0
     }
+
+	/// Returns weither or not the considered state in the open set
+	fn is_in_open_set(&self, state: &State) -> bool {
+		self.open_set.iter().find(|&iter_state| iter_state == state).is_some()
+	}
+
+	fn is_in_closed_set(&self, state: &State) -> bool {
+		self.closed_set.entry(state).is_some()
+	}
+	
+	/// A* algorithm
+	pub fn astar(&mut self) {
+		let mut success = false;
+		while self.open_set.len() != 0 {
+			let state = self.open_set.peek().expect("Tried to peek none existing open state");
+			if state.is_solved() {
+				success = true;
+			} else {
+				let actual_state = self.open_set.pop().expect("Tried to pop none existing open state");
+				self.closed_set.insert(self.closed_set.hasher(state.taquin), state);
+				for state in &actual_state.iter_mut() {
+					if self.is_in_closed_set(state) {
+						continue ;
+					}
+					
+					if self.is_in_open_set() == false
+					{
+						state.set_predecessor(&actual_state);
+						state.set_cost(actual_state.cost + 1)
+						self.open_set.push(state);//clone ?
+					}
+					
+					let try_cost = actual_state.cost + 1;
+					if try_cost >= actual_state.cost  {
+						continue ;
+					}
+					
+					state.set_predecessor(&actual_state);
+					state.set_cost(try_score);
+					state.set_fcost(try_score +
+									self.heuristic(&state, &self.spiral));
+				}
+			}
+		}
+		if success {
+			self.unwind_solution_path();
+		}
+	}
 }
 
 #[cfg(test)]

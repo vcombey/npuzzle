@@ -28,8 +28,9 @@ fn main() {
        println!("{}", s);
     
     let taquin = s.parse::<Taquin>().unwrap();
+	let spiral = Taquin::spiral(taquin.dim());
     //println!("{:?}", taquin);
-    let solver = Solver::new(taquin);
+    let solver = Solver::new(taquin, Box::new(|ref _taquin, ref _spiral| 1.0));
     //println!("{}", solver.is_solved());
     println!("solvability {}", solver.is_solvable());
     
