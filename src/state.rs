@@ -96,7 +96,8 @@ impl<'a> Iterator for Neighbours<'a> {
                 break (t, dir);
             }
        };
-       Some(State::new(Some(dir), taquin_next))
+       // to get the predecessor go to the oposite direction
+       Some(State::new(Some(dir.oposite()), taquin_next))
     }
 }
 

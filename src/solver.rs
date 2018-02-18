@@ -48,38 +48,37 @@ impl Solver {
 	
     /// A* algorithm
     pub fn astar(&mut self) {
-        /*
-        while self.open_set.len() != 0 {
-            // the solution is found
+        while !self.open_set.is_empty() {
             if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
+                // the solution is found
                 break ;
-            } else {
-                let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
-                self.closed_set.insert(current_state);
-                for mut state in current_state.iter_on_possible_states() {
-                    if self.is_in_closed_set(&state) {
-                        continue ;
-                    }
+            }
 
-                    if self.is_in_open_set(&state) == false {
-                        self.open_set.push(state);//clone ?
-                    } else {
-                        //self.open_set.
-                    }
+            let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
 
-                    let try_cost = current_state.cost + 1.0;
-                    if try_cost >= state.cost {
-                        continue ;
-                    }
-
-                    state.set_cost(try_cost);
-                    state.set_fcost(try_cost +
-                                    (self.heuristic)(&state, &self.spiral));
+            for mut state in current_state.iter_on_possible_states() {
+                state.set_fcost((self.heuristic)(&state, &self.spiral));
+                if !self.is_in_closed_set(&state) && !self.is_in_open_set(&state) {
+                    self.open_set.push(state);
                 }
+                else {
+                    // get old state in the open or closed set
+                    let old_state = self.open_set.iter().find(|s| **s == state)
+                        .unwrap_or_else(|| self.closed_set.get(&state).unwrap());
+                    if old_state.cost > state.cost {
+                        old_state.cost = state.cost;
+                        if self.is_in_closed_set(&state) {
+                            self.closed_set.remove(&state);
+                            self.open_set.push(state);
+                        }
+                    }
+                }
+            }
+            if self.closed_set.insert(current_state) {
+                panic!("can't be already in closed set ?");
             }
         }
         self.unwind_solution_path();
-    */
     }
 
     fn unwind_solution_path(&self) {
