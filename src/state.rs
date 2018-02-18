@@ -5,6 +5,7 @@ use	std::cmp::{Ord, Ordering, Eq, PartialEq};
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
 
+#[derive(Debug)]
 pub struct State {
 	/// Cost of current State
 	pub cost: f32,
@@ -19,11 +20,6 @@ pub struct State {
 	
 	/// Key of the State
 	hash: u64,
-}
-
-struct StateIter<'a> {
-	predecessor: &'a State,
-	count: u8,
 }
 
 impl State {
@@ -77,28 +73,30 @@ impl Hash for State {
 
 pub struct Neighbours<'a> {
     state: &'a State,
-    dir: Dir,
+    dir: Iter<'a, Dir>,
 }
 
 impl<'a> Neighbours<'a> {
     pub fn new(state: &'a State) -> Self {
         Neighbours {
             state,
-            dir: Dir::new(),
+            dir: [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter(),
         }
     }
 }
 
+use std::slice::Iter;
+
 impl<'a> Iterator for Neighbours<'a> {
     type Item = State;
     fn next(&mut self) -> Option<State> {
-       let taquin_next = loop {
-            self.dir.next()?;
-            if let Some(t) = self.state.get_taquin().move_piece(self.dir) {
-                break t;
+       let (taquin_next, dir) = loop {
+            let dir = *self.dir.next()?;
+            if let Some(t) = self.state.get_taquin().move_piece(dir) {
+                break (t, dir);
             }
        };
-       Some(State::new(Some(self.dir), taquin_next))
+       Some(State::new(Some(dir), taquin_next))
     }
 }
 
@@ -125,5 +123,28 @@ impl PartialEq for State {
 
     fn ne(&self, other: &Self) -> bool {
 		self.taquin.ne(&other.taquin)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn neighbours() {
+        let t = "3
+            1 5 4
+            8 0 6
+            3 7 2".parse::<Taquin>().unwrap();
+        let state = State::new(None, t.clone());
+        let mut dir_iter = [Dir::Right, Dir::Down, Dir::Left, Dir::Up].iter();
+        let mut dir;
+
+        assert!(state.iter_on_possible_states().next().is_some());
+
+        for neighbour in state.iter_on_possible_states() {
+            dir = *dir_iter.next().unwrap();
+            println!("{:?}", neighbour);
+            assert_eq!(neighbour, State::new(None, t.clone().move_piece(dir).unwrap()));
+        }
     }
 }

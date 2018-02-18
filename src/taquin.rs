@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dir {
     Right,
     Up,
@@ -12,22 +12,14 @@ pub enum Dir {
     Left,
 }
 
-impl Iterator for Dir {
-    type Item = Dir;
-    fn next(&mut self) -> Option<Self> {
-       *self = match *self {
-            Dir::Right => Dir::Down,
-            Dir::Down => Dir::Left,
-            Dir::Left => Dir::Up,
-            Dir::Up => {return None},
-       };
-       Some(*self)
-    }
-}
-
 impl Dir {
-    pub fn new() -> Self{
-        Dir::Up
+    pub fn oposite(self) -> Self {
+        match self {
+            Dir::Right => Dir::Left,
+            Dir::Down => Dir::Up,
+            Dir::Left => Dir::Right,
+            Dir::Up => Dir::Down,
+        }
     }
 }
 
@@ -47,12 +39,7 @@ impl Hash for Taquin {
 
 impl Taquin {
     pub fn new(n: usize, pieces: Vec<u64>) -> Self {
-        //TODO: remove for opti
-        for i in 0..n * n {
-            if !pieces.iter().any(|&k| k == i as u64) {
-                panic!("missing nb in pieces");
-            }
-        }
+        debug_assert!((0..n).all(|i| pieces.iter().any(|&k| k == i as u64)));
         let cur_pos = pieces.iter().position(|&x| x == 0).unwrap();
         assert_eq!(pieces.len(), n * n);
         Taquin {
@@ -108,7 +95,8 @@ impl Taquin {
         let mut pieces: Vec<u64> = vec![0; n * n];
         let mut i = 0;
         let mut count: u64 = 1;
-        let mut dir = Dir::Right;
+        let mut dir_cycle = [Dir::Right, Dir::Down, Dir::Left, Dir::Up].iter().cycle();
+        let mut dir = dir_cycle.next().unwrap();
         while (count as usize) < n * n {
             loop {
                 pieces[i] = count;
@@ -123,10 +111,7 @@ impl Taquin {
                     },
                 }
             }
-            dir = match dir.next() {
-                None => Dir::Right,
-                Some(d) => d,
-            }
+            dir = dir_cycle.next().unwrap();
         }
         Self::new(n, pieces)
     }
@@ -394,19 +379,76 @@ mod test {
             1 5 0
             8 4 6
             3 7 2";
-        let s_down = "3
+        let s_after = "3
             1 5 6
             8 4 0
             3 7 2";
         let t = s.parse::<Taquin>().unwrap();
-        let t_down = s_down.parse::<Taquin>().unwrap();
-        assert_eq!(t.move_piece(Dir::Down).unwrap(), t_down);
+        let t_after = s_after.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Down).unwrap(), t_after);
+        assert_eq!(t.move_piece(Dir::Down).unwrap().move_piece(Dir::Up).unwrap(), t);
+
         let s = "3
             1 5 2
             8 4 6
             3 7 0";
         let t = s.parse::<Taquin>().unwrap();
         assert_eq!(t.move_piece(Dir::Down), None);
+
+        let s = "3
+            1 5 6
+            8 4 0
+            3 7 2";
+        let s_after = "3
+            1 5 0
+            8 4 6
+            3 7 2";
+        let t = s.parse::<Taquin>().unwrap();
+        let t_after = s_after.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Up).unwrap(), t_after);
+        let s = "3
+            1 5 0
+            8 4 6
+            3 7 2";
+        let t = s.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Up), None);
+
+        let s = "3
+            1 5 0
+            8 4 6
+            3 7 2";
+        let s_after = "3
+            1 0 5
+            8 4 6
+            3 7 2";
+        let t = s.parse::<Taquin>().unwrap();
+        let t_after = s_after.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Left).unwrap(), t_after);
+        assert_eq!(t.move_piece(Dir::Left).unwrap().move_piece(Dir::Right).unwrap(), t);
+        let s = "3
+            1 5 2
+            8 4 6
+            0 7 3";
+        let t = s.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Left), None);
+
+        let s = "3
+            1 0 5
+            8 4 6
+            3 7 2";
+        let s_after = "3
+            1 5 0
+            8 4 6
+            3 7 2";
+        let t = s.parse::<Taquin>().unwrap();
+        let t_after = s_after.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Right).unwrap(), t_after);
+        let s = "3
+            1 5 2
+            8 4 6
+            3 7 0";
+        let t = s.parse::<Taquin>().unwrap();
+        assert_eq!(t.move_piece(Dir::Right), None);
     }
     #[test]
     fn solved() {
@@ -417,5 +459,17 @@ mod test {
     fn unsolved() {
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
         assert!(!taquin.is_solved(&Taquin::spiral(42)));
+    }
+    #[test]
+    fn oposite() {
+        assert_eq!(Dir::Right.oposite(), Dir::Left);
+        assert_eq!(Dir::Left.oposite(), Dir::Right);
+        assert_eq!(Dir::Up.oposite(), Dir::Down);
+        assert_eq!(Dir::Down.oposite(), Dir::Up);
+    }
+    #[test]
+    #[should_panic]
+    fn new_taquin() {
+        let taquin = Taquin::new(3, vec![5, 10, 0, 8, 4, 6, 3, 7, 2]);
     }
 }

@@ -25,20 +25,13 @@ impl Solver {
         }
     }
 
-	/// Returns weither or not the current state of the taquin is solved
+	/// Returns weither or not the inital state of the taquin is solvable
     pub fn is_solvable(&self) -> bool {
-        let nb_trans = self.open_set.peek()
-			.unwrap()
-			.get_taquin()
-			.nb_transposition(&self.spiral);
-        let nb_move = self.open_set
-			.peek()
-			.unwrap()
-			.get_taquin()
-			.nb_move_zero();
+        let taquin = self.open_set.peek().unwrap().get_taquin();
 
-        println!("{}", nb_trans);
-        println!("{}", nb_move);
+        let nb_trans = taquin.nb_transposition(&self.spiral);
+        let nb_move = taquin.nb_move_zero();
+
         // the taquin is solvable if nb_trans and nb_move have the same parity
         (nb_trans + nb_move) % 2 == 0
     }
@@ -53,47 +46,45 @@ impl Solver {
 		self.closed_set.get(state).is_some()
 	}
 	
-	/// A* algorithm
-	pub fn astar(&mut self) {
+    /// A* algorithm
+    pub fn astar(&mut self) {
         /*
-		let mut success = false;
-		while self.open_set.len() != 0 {
-			if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
-				success = true;
-			} else {
-				let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
-				self.closed_set.insert(current_state);
-				for mut state in current_state.iter_on_possible_states() {
-					if self.is_in_closed_set(&state) {
-						continue ;
-					}
-					
-					if self.is_in_open_set(&state) == false {
-						self.open_set.push(state);//clone ?
-					} else {
-						//self.open_set.
-					}
-					
-					let try_cost = current_state.cost + 1.0;
-					if try_cost >= state.cost {
-						continue ;
-					}
-					
-					state.set_cost(try_cost);
-					state.set_fcost(try_cost +
-						(self.heuristic)(&state, &self.spiral));
-				}
-			}
-		}
-		if success {
-			self.unwind_solution_path();
-		}
-        */
-	}
+        while self.open_set.len() != 0 {
+            // the solution is found
+            if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
+                break ;
+            } else {
+                let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
+                self.closed_set.insert(current_state);
+                for mut state in current_state.iter_on_possible_states() {
+                    if self.is_in_closed_set(&state) {
+                        continue ;
+                    }
 
-	fn unwind_solution_path(&self) {
-		unimplemented!()
-	}
+                    if self.is_in_open_set(&state) == false {
+                        self.open_set.push(state);//clone ?
+                    } else {
+                        //self.open_set.
+                    }
+
+                    let try_cost = current_state.cost + 1.0;
+                    if try_cost >= state.cost {
+                        continue ;
+                    }
+
+                    state.set_cost(try_cost);
+                    state.set_fcost(try_cost +
+                                    (self.heuristic)(&state, &self.spiral));
+                }
+            }
+        }
+        self.unwind_solution_path();
+    */
+    }
+
+    fn unwind_solution_path(&self) {
+        unimplemented!()
+    }
 }
 
 #[cfg(test)]
