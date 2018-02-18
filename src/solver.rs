@@ -19,7 +19,7 @@ impl Solver {
     pub fn new(taquin: Taquin) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
 		let spiral = Taquin::spiral(taquin.dim());
-		open_set.push(State::new(None, taquin));
+		open_set.push(State::new(None, 0.0, taquin));
         Solver {
             spiral,
 			heuristic: Solver::default_heuristic,
@@ -63,10 +63,12 @@ impl Solver {
 
             let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
 
+            println!("current_state: {}", current_state);
             for mut state in current_state.iter_on_possible_states() {
                 let fcost = (self.heuristic)(&state, &self.spiral);
                 state.set_fcost(fcost);
 
+                println!("neighbour: {}", state);
                 if !self.is_in_closed_set(&state) && !self.is_in_open_set(&state) {
                     self.open_set.push(state);
                 }

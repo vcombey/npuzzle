@@ -23,12 +23,12 @@ pub struct State {
 }
 
 impl State {
-	pub fn new(predecessor: Option<Dir>, taquin: Taquin) -> State {
+	pub fn new(predecessor: Option<Dir>, cost: f32, taquin: Taquin) -> State {
 		let mut hash = DefaultHasher::new();
 		taquin.hash(&mut hash);
 		
 		State {
-			cost: INFINITY,
+			cost: cost,
 			fcost: INFINITY,
 			taquin,
 			predecessor, 
@@ -97,7 +97,7 @@ impl<'a> Iterator for Neighbours<'a> {
             }
        };
        // to get the predecessor go to the oposite direction
-       Some(State::new(Some(dir.oposite()), taquin_next))
+       Some(State::new(Some(dir.oposite()), self.state.cost + 1.0,  taquin_next))
     }
 }
 
@@ -124,6 +124,15 @@ impl PartialEq for State {
 
     fn ne(&self, other: &Self) -> bool {
 		self.taquin.ne(&other.taquin)
+    }
+}
+
+use std::fmt::Display;
+use std::fmt;
+
+impl Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}\n {})", self, self.taquin)
     }
 }
 
