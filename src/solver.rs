@@ -4,25 +4,32 @@ use	std::collections::{HashSet, BinaryHeap};
 
 pub struct Solver {
     spiral: Taquin,
-	heuristic: Box<FnOnce(&State, &Taquin) -> f32>,
 	open_set: BinaryHeap<State>,
 	closed_set: HashSet<State>,
+	heuristic: fn(&State, &Taquin) -> f32,
 }
 
 impl Solver {
 	const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
 	const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
-	
-    pub fn new(taquin: Taquin, heuristic: Box<FnOnce(&State, &Taquin) -> f32>) -> Self {
+	pub fn default_heuristic(state: &State, spiral: &Taquin) -> f32 {
+        1.0
+    }
+
+    pub fn new(taquin: Taquin) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
 		let spiral = Taquin::spiral(taquin.dim());
 		open_set.push(State::new(None, taquin));
         Solver {
             spiral,
-			heuristic,
+			heuristic: Solver::default_heuristic,
 			open_set,
 			closed_set: HashSet::with_capacity(Self::DEFAULT_OPEN_SET_SIZE),
         }
+    }
+
+    pub fn whith_heuristic(&mut self, heuristic: fn(&State, &Taquin) -> f32) {
+        self.heuristic = heuristic;
     }
 
 	/// Returns weither or not the inital state of the taquin is solvable
@@ -92,13 +99,13 @@ mod test {
     #[test]
     fn solvable() {
         let taquin = Taquin::new(3, vec![0,8,3,1,6,4,5,7,2]);
-        let solver = Solver::new(taquin, Box::new(|ref state, ref spiral| { 1.0 }));
+        let solver = Solver::new(taquin);
         assert!(solver.is_solvable());
     }
     #[test]
     fn unsolvable() {
         let taquin = Taquin::new(3, vec![1,7,8,2,0,5,3,4,6]);
-        let solver = Solver::new(taquin, Box::new(|ref state, ref spiral| { 1.0 }));
+        let solver = Solver::new(taquin);
         assert!(!solver.is_solvable());
     }
 }
