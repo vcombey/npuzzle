@@ -10,13 +10,13 @@ pub struct Solver {
 }
 
 impl Solver {
-	const DEFAULT_OPEN_SET_SIZE: usize = 65536;
-	const DEFAULT_CLOSED_SET_SIZE: usize = 65536;
+	const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
+	const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 	
     pub fn new(taquin: Taquin, heuristic: Box<FnOnce(&State, &Taquin) -> f32>) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
-		open_set.push(State::new(None, taquin.clone()));//clone ?
 		let spiral = Taquin::spiral(taquin.dim());
+		open_set.push(State::new(None, taquin));
         Solver {
             spiral,
 			heuristic,
@@ -45,16 +45,17 @@ impl Solver {
 
 	/// Returns weither or not the considered state in is the open set
 	fn is_in_open_set(&self, state: &State) -> bool {
-		self.open_set.iter().find(|&iter_state| iter_state == state).is_some()
+		self.open_set.iter().any(|iter_state| iter_state == state)
 	}
 
 	/// Returns weither or not the considered state is in the closed set
-	fn is_in_closed_set(&mut self, state: &State) -> bool {
+	fn is_in_closed_set(&self, state: &State) -> bool {
 		self.closed_set.get(state).is_some()
 	}
 	
 	/// A* algorithm
 	pub fn astar(&mut self) {
+        /*
 		let mut success = false;
 		while self.open_set.len() != 0 {
 			if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
@@ -70,7 +71,7 @@ impl Solver {
 					if self.is_in_open_set(&state) == false {
 						self.open_set.push(state);//clone ?
 					} else {
-						self.open_set.
+						//self.open_set.
 					}
 					
 					let try_cost = current_state.cost + 1.0;
@@ -87,6 +88,7 @@ impl Solver {
 		if success {
 			self.unwind_solution_path();
 		}
+        */
 	}
 
 	fn unwind_solution_path(&self) {

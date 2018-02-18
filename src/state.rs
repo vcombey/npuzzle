@@ -112,10 +112,7 @@ impl Ord for State {
     /// Implementation of cmp in reverse order since we want a min_heap
     // Be careful here
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.fcost <= other.fcost {
-            true => Ordering::Greater,
-            false => Ordering::Less,
-        }
+        if self.fcost <= other.fcost { Ordering::Greater } else { Ordering::Less }
     }
 }
 

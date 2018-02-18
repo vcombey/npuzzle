@@ -416,6 +416,6 @@ mod test {
     #[test]
     fn unsolved() {
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
-        assert!(!taquin.is_solved(&taquin));
+        assert!(!taquin.is_solved(&Taquin::spiral(42)));
     }
 }
