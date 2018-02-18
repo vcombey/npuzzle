@@ -66,7 +66,10 @@ impl Taquin {
                 }
             }
             Dir::Left => {
-                if (i - 1) % n != n - 1 {
+                if i == 0 {
+                    None
+                }
+                else if (i - 1) % n != n - 1 {
                     Some(i - 1)
                 } else {
                     None

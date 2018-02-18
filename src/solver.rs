@@ -52,7 +52,7 @@ impl Solver {
 	fn is_in_closed_set(&self, state: &State) -> bool {
 		self.closed_set.get(state).is_some()
 	}
-	
+	#[deny(mutable_transmutes)]
     /// A* algorithm
     pub fn astar(&mut self) {
         while !self.open_set.is_empty() {
@@ -64,25 +64,38 @@ impl Solver {
             let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
 
             for mut state in current_state.iter_on_possible_states() {
-                state.set_fcost((self.heuristic)(&state, &self.spiral));
+                let fcost = (self.heuristic)(&state, &self.spiral);
+                state.set_fcost(fcost);
+
                 if !self.is_in_closed_set(&state) && !self.is_in_open_set(&state) {
                     self.open_set.push(state);
                 }
+                
                 else {
                     // get old state in the open or closed set
-                    let old_state = self.open_set.iter().find(|s| **s == state)
-                        .unwrap_or_else(|| self.closed_set.get(&state).unwrap());
-                    if old_state.cost > state.cost {
-                        old_state.cost = state.cost;
+                    let &State {
+                        cost, ..
+                    } = self.open_set.iter().find(|s| **s == state)
+                    .unwrap_or_else(|| self.closed_set.get(&state).unwrap());
+
+                    if cost > state.cost {
+                        //old_state.cost = state.cost;
+                        if self.is_in_open_set(&state) {
+                            unsafe {
+                                let old_state: &mut State = ::std::mem::transmute::<*mut State, &mut State>(self.open_set.iter().find(|s| **s == state).unwrap() as *const State as *mut State);
+                                old_state.cost = state.cost;
+                            }
+                        }
                         if self.is_in_closed_set(&state) {
                             self.closed_set.remove(&state);
                             self.open_set.push(state);
                         }
                     }
                 }
+
             }
             if self.closed_set.insert(current_state) {
-                panic!("can't be already in closed set ?");
+            //    panic!("can't be already in closed set ?");
             }
         }
         self.unwind_solution_path();

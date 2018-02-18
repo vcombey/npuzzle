@@ -30,7 +30,8 @@ fn main() {
     let taquin = s.parse::<Taquin>().unwrap();
 	let spiral = Taquin::spiral(taquin.dim());
     //println!("{:?}", taquin);
-    let solver = Solver::new(taquin, Box::new(|ref _taquin, ref _spiral| 1.0));
+    let mut solver = Solver::new(taquin);
+    solver.astar();
     //println!("{}", solver.is_solved());
     println!("solvability {}", solver.is_solvable());
     
