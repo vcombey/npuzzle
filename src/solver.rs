@@ -1,6 +1,7 @@
 use taquin::Taquin;
 use	state::State;
-use	std::collections::{HashSet, BinaryHeap};
+use	std::collections::HashSet;
+use maxHeap::BinaryHeap;
 
 pub struct Solver {
     spiral: Taquin,
@@ -16,15 +17,21 @@ impl Solver {
         1.0
     }
 
+	pub fn manhattan_heuristic(state: &State, spiral: &Taquin) -> f32 {
+        state.get_taquin().manhattan_heuristic(spiral)
+    }
+
     pub fn new(taquin: Taquin) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
+         let mut closed_set = HashSet::with_capacity(Self::DEFAULT_CLOSED_SET_SIZE);
 		let spiral = Taquin::spiral(taquin.dim());
-		open_set.push(State::new(None, 0.0, taquin));
+		open_set.push(State::new(None, 0.0, taquin.clone()));
+		//closed_set.insert(State::new(None, 0.0, taquin));
         Solver {
             spiral,
 			heuristic: Solver::default_heuristic,
 			open_set,
-			closed_set: HashSet::with_capacity(Self::DEFAULT_OPEN_SET_SIZE),
+			closed_set,
         }
     }
 
@@ -57,18 +64,19 @@ impl Solver {
     pub fn astar(&mut self) {
         while !self.open_set.is_empty() {
             if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
+                println!("solution found");
                 // the solution is found
                 break ;
             }
 
             let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
 
-            println!("current_state: {}", current_state);
+            //println!("current_state: {}", current_state);
             for mut state in current_state.iter_on_possible_states() {
-                let fcost = (self.heuristic)(&state, &self.spiral);
-                state.set_fcost(fcost);
+                let hcost = (self.heuristic)(&state, &self.spiral);
+                state.set_hcost(hcost);
 
-                println!("neighbour: {}", state);
+             //   println!("neighbour: {}", state);
                 if !self.is_in_closed_set(&state) && !self.is_in_open_set(&state) {
                     self.open_set.push(state);
                 }
@@ -76,19 +84,19 @@ impl Solver {
                 else {
                     // get old state in the open or closed set
                     let &State {
-                        cost, ..
+                        gcost, ..
                     } = self.open_set.iter().find(|s| **s == state)
                     .unwrap_or_else(|| self.closed_set.get(&state).unwrap());
 
-                    if cost > state.cost {
-                        //old_state.cost = state.cost;
+                    if gcost > state.gcost {
                         if self.is_in_open_set(&state) {
-                            unsafe {
+/*                            unsafe {
                                 let old_state: &mut State = ::std::mem::transmute::<*mut State, &mut State>(self.open_set.iter().find(|s| **s == state).unwrap() as *const State as *mut State);
                                 old_state.cost = state.cost;
-                            }
+                            }*/
+                            self.open_set.update_value(state);
                         }
-                        if self.is_in_closed_set(&state) {
+                        else if self.is_in_closed_set(&state) {
                             self.closed_set.remove(&state);
                             self.open_set.push(state);
                         }
@@ -96,8 +104,8 @@ impl Solver {
                 }
 
             }
-            if self.closed_set.insert(current_state) {
-            //    panic!("can't be already in closed set ?");
+            if !self.closed_set.insert(current_state) {
+                panic!("can't be already in closed set ?");
             }
         }
         self.unwind_solution_path();

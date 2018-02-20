@@ -145,6 +145,23 @@ impl Taquin {
         }
         trans_count
     }
+    /// calculate the manhattan distance between two position represended as the
+    /// index of the piece
+    fn manhattan_distance(index_1: usize, index_2: usize, n: usize) -> usize {
+        unimplemented!();
+        //(index_1 % n - index_2 % n).abs() + (index_1 / n - index_2 / n).abs()
+    }
+    pub fn manhattan_heuristic(&self, spiral: &Taquin) -> f32 {
+        let mut dist = 0;
+        for (index_spiral, nb) in spiral.iter().enumerate() {
+            let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
+            if index_spiral != index_pieces {
+                
+                dist += Self::manhattan_distance(index_pieces, index_spiral, self.n);
+            }
+        }
+        dist as f32
+    }
     pub fn is_solved(&self, spiral: &Taquin) -> bool {
         self.pieces.iter()
             .zip(spiral.iter())

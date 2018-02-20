@@ -8,10 +8,10 @@ use std::collections::hash_map::DefaultHasher;
 #[derive(Debug)]
 pub struct State {
 	/// Cost of current State
-	pub cost: f32,
+	pub gcost: f32,
 
 	/// Heuristical search cost
-	pub fcost: f32,
+	pub hcost: f32,
 	/// Actual Taquin state
 	taquin: Taquin,
 
@@ -23,13 +23,13 @@ pub struct State {
 }
 
 impl State {
-	pub fn new(predecessor: Option<Dir>, cost: f32, taquin: Taquin) -> State {
+	pub fn new(predecessor: Option<Dir>, gcost: f32, taquin: Taquin) -> State {
 		let mut hash = DefaultHasher::new();
 		taquin.hash(&mut hash);
 		
 		State {
-			cost: cost,
-			fcost: INFINITY,
+			gcost,
+			hcost: INFINITY,
 			taquin,
 			predecessor, 
 			hash: hash.finish(), // rewrite this
@@ -41,13 +41,13 @@ impl State {
 	}
 	
 	/// Set state's cost to new_cost
-	pub fn set_cost(&mut self, new_cost: f32) {
-		self.cost = new_cost;
+	pub fn set_gcost(&mut self, new_gcost: f32) {
+		self.gcost = new_gcost;
 	}
 
 	/// Set state's fcost to new_fcost
-	pub fn set_fcost(&mut self, new_fcost: f32) {
-		self.fcost = new_fcost;
+	pub fn set_hcost(&mut self, new_hcost: f32) {
+		self.hcost = new_hcost;
 	}
 
 	/// Get the inner taquin of state
@@ -97,7 +97,7 @@ impl<'a> Iterator for Neighbours<'a> {
             }
        };
        // to get the predecessor go to the oposite direction
-       Some(State::new(Some(dir.oposite()), self.state.cost + 1.0,  taquin_next))
+       Some(State::new(Some(dir.oposite()), self.state.gcost + 1.0,  taquin_next))
     }
 }
 
@@ -111,7 +111,7 @@ impl Ord for State {
     /// Implementation of cmp in reverse order since we want a min_heap
     // Be careful here
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.fcost <= other.fcost { Ordering::Greater } else { Ordering::Less }
+        if self.gcost + self.hcost <= other.gcost + other.hcost { Ordering::Greater } else { Ordering::Less }
     }
 }
 
@@ -121,10 +121,11 @@ impl PartialEq for State {
     fn eq(&self, other: &Self) -> bool {
 		self.taquin.eq(&other.taquin)
     }
-
+/*
     fn ne(&self, other: &Self) -> bool {
 		self.taquin.ne(&other.taquin)
     }
+    */
 }
 
 use std::fmt::Display;
@@ -145,7 +146,7 @@ mod test {
             1 5 4
             8 0 6
             3 7 2".parse::<Taquin>().unwrap();
-        let state = State::new(None, t.clone());
+        let state = State::new(None, 0.0, t.clone());
         let mut dir_iter = [Dir::Right, Dir::Down, Dir::Left, Dir::Up].iter();
         let mut dir;
 
@@ -154,7 +155,7 @@ mod test {
         for neighbour in state.iter_on_possible_states() {
             dir = *dir_iter.next().unwrap();
             println!("{:?}", neighbour);
-            assert_eq!(neighbour, State::new(None, t.clone().move_piece(dir).unwrap()));
+            assert_eq!(neighbour, State::new(None, 0.0, t.clone().move_piece(dir).unwrap()));
         }
     }
 }
