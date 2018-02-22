@@ -16,7 +16,7 @@ pub struct State {
 	taquin: Taquin,
 
 	/// Dir of predecessor
-	predecessor: Option<Dir>,
+	pub predecessor: Option<Dir>,
 	
 	/// Key of the State
 	hash: u64,
@@ -62,6 +62,9 @@ impl State {
 	pub fn iter_on_possible_states<'a>(&'a self) -> Neighbours<'a> {
         Neighbours::new(&self)
 	}
+    pub fn move_piece(&self, dir: Dir) -> Option<Self> {
+        Some(State::new(None, 0.0, self.taquin.move_piece(dir)?))
+    }
 }
 
 impl Hash for State {

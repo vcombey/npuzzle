@@ -23,7 +23,7 @@ impl Solver {
 
     pub fn new(taquin: Taquin) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
-         let mut closed_set = HashSet::with_capacity(Self::DEFAULT_CLOSED_SET_SIZE);
+         let closed_set = HashSet::with_capacity(Self::DEFAULT_CLOSED_SET_SIZE);
 		let spiral = Taquin::spiral(taquin.dim());
 		open_set.push(State::new(None, 0.0, taquin.clone()));
 		//closed_set.insert(State::new(None, 0.0, taquin));
@@ -35,7 +35,7 @@ impl Solver {
         }
     }
 
-    pub fn whith_heuristic(&mut self, heuristic: fn(&State, &Taquin) -> f32) {
+    pub fn with_heuristic(&mut self, heuristic: fn(&State, &Taquin) -> f32) {
         self.heuristic = heuristic;
     }
 
@@ -59,7 +59,6 @@ impl Solver {
 	fn is_in_closed_set(&self, state: &State) -> bool {
 		self.closed_set.get(state).is_some()
 	}
-	#[deny(mutable_transmutes)]
     /// A* algorithm
     pub fn astar(&mut self) {
         while !self.open_set.is_empty() {
@@ -76,7 +75,7 @@ impl Solver {
                 let hcost = (self.heuristic)(&state, &self.spiral);
                 state.set_hcost(hcost);
 
-             //   println!("neighbour: {}", state);
+                //println!("neighbour: {}", state);
                 if !self.is_in_closed_set(&state) && !self.is_in_open_set(&state) {
                     self.open_set.push(state);
                 }
@@ -90,10 +89,6 @@ impl Solver {
 
                     if gcost > state.gcost {
                         if self.is_in_open_set(&state) {
-/*                            unsafe {
-                                let old_state: &mut State = ::std::mem::transmute::<*mut State, &mut State>(self.open_set.iter().find(|s| **s == state).unwrap() as *const State as *mut State);
-                                old_state.cost = state.cost;
-                            }*/
                             self.open_set.update_value(state);
                         }
                         else if self.is_in_closed_set(&state) {
@@ -108,11 +103,17 @@ impl Solver {
                 panic!("can't be already in closed set ?");
             }
         }
-        self.unwind_solution_path();
+        self.unwind_solution_path(self.open_set.peek().unwrap());
     }
 
-    fn unwind_solution_path(&self) {
-        unimplemented!()
+    fn unwind_solution_path(&self, state: &State) {
+        match state.predecessor {
+            None => {return;},
+            Some(p) => {
+                self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
+                println!("{}", state.get_taquin());
+            }
+        }
     }
 }
 

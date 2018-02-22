@@ -31,8 +31,10 @@ fn main() {
 	let spiral = Taquin::spiral(taquin.dim());
     //println!("{:?}", taquin);
     let mut solver = Solver::new(taquin);
+    solver.with_heuristic(Solver::manhattan_heuristic);
+    if !solver.is_solvable() {
+        println!("this is unsolvable");
+        return ;
+    }
     solver.astar();
-    //println!("{}", solver.is_solved());
-    println!("solvability {}", solver.is_solvable());
-    
 }
