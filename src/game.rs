@@ -1,37 +1,64 @@
 //! Basic hello world example.
 
 extern crate ggez;
-use ggez::conf;
-use ggez::event;
-use ggez::{Context, GameResult};
-use ggez::graphics;
+extern crate image;
+
+use image::*;
+
+use std::fs::File;
 use std::env;
 use std::path;
+use std::cmp;
+use ggez::*;
+use ggez::event::*;
+use ggez::graphics::Drawable;
+use ggez::graphics::*;
+use taquin::Taquin;
+use taquin::Dir;
 
-// First we make a structure to contain the game's state
 pub struct MainState {
-    text: graphics::Text,
     frames: usize,
+    images: Vec<graphics::Image>,
+    spiral: Taquin,
+    taquin: Taquin,
 }
 
-// Then we implement the `ggez:event::EventHandler` trait on it, which
-// requires callbacks for updating and drawing the game state each frame.
-//
-// The `EventHandler` trait also contains callbacks for event handling
-// that you can override if you wish, but the defaults are fine.
+pub const WINDOW_SIZE: u32 = 300;
+
 impl MainState {
-    pub fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let font = graphics::Font::new(ctx, "/DejaVuSerif.ttf", 48)?;
-        let text = graphics::Text::new(ctx, "Hello world!", &font)?;
+    pub fn new(ctx: &mut Context, taquin: Taquin) -> GameResult<MainState> {
+        let n = 3;
+        let mut images = Vec::new();
+
+        match image::open("./resources/vcombey.jpg") {
+            Err(e) => println!("{}",e),
+            Ok(mut img) => {
+                let (w, h) = img.dimensions();
+                let mut img = img.resize_exact(WINDOW_SIZE, WINDOW_SIZE, FilterType::Nearest);
+                let (w, h) = img.dimensions();
+                let SUB_IMG_SIZE = w / n;
+                for (i, j) in iproduct!(0..n,0..n) {
+                    let sub = SubImage::new(&mut img, j * SUB_IMG_SIZE, i * SUB_IMG_SIZE, SUB_IMG_SIZE, SUB_IMG_SIZE).to_image();
+                    //let sub = SubImage::new(&mut img, 0, 0, 133, 133).to_image();
+                    //let ref mut fout = File::create("test.jpg").unwrap();
+
+                    //resized.save(fout, ImageFormat::JPEG).unwrap();
+                    sub.save(format!("./resources/test{}{}.jpg", j, i)).unwrap();
+                    let image = graphics::Image::new(ctx, format!("/test{}{}.jpg", j, i)).unwrap();
+                    images.push(image);
+                }
+            }
+        }
 
         let s = MainState {
-            text: text,
             frames: 0,
+            images,
+            spiral: Taquin::spiral(3),
+            taquin,
         };
         Ok(s)
     }
 }
-
 
 impl event::EventHandler for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
@@ -40,10 +67,20 @@ impl event::EventHandler for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx);
-        // Drawables are drawn from their top-left corner
-        let dest_point = graphics::Point2::new(10.0,
-                                               10.0);
-        graphics::draw(ctx, &self.text, dest_point, 0.0)?;
+        for (i, nb) in self.taquin.iter().enumerate() {
+        //for (i, image) in self.images.iter().enumerate() { 
+            if *nb == 0 {
+                continue ;
+            }
+            let index = self.taquin.get_index_spiral(*nb, &self.spiral);
+            let n = graphics::get_size(ctx).0 as f32;
+            let col = (i % 3) as f32;
+            let line = (i / 3) as f32;
+            self.images[index].draw_ex(ctx, DrawParam{
+                dest: Point2::new(n / 3.0 * col as f32, n / 3.0 * line),
+                ..Default::default()});
+        }
+
         graphics::present(ctx);
         self.frames += 1;
         if (self.frames % 100) == 0 {
@@ -51,4 +88,17 @@ impl event::EventHandler for MainState {
         }
         Ok(())
     }
-}
+
+        fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, keymod: Mod, repeat: bool) {
+            println!("Key released: {:?}, modifier {:?}, repeat: {}",
+                     keycode,
+                     keymod,
+                     repeat);
+            if let Some(dir) =  Dir::from_keycode(keycode) {
+                if let Some(taquin_move) = self.taquin.move_piece(dir) {
+                    self.taquin = taquin_move;
+                }
+            }
+        }
+
+    }

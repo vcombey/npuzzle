@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::Read;
 use npuzzle::game::MainState;
 extern crate ggez;
-use ggez::conf;
+use ggez::conf::*;
 use ggez::event;
 use ggez::{Context, GameResult};
 use ggez::graphics;
@@ -20,7 +20,7 @@ fn read_file(filename: &str) -> Result<String, std::io::Error> {
 }
 
 fn main() {
-    /*let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         eprintln!("bad number of args, expected one");
         return;
@@ -35,25 +35,30 @@ fn main() {
     println!("{}", s);
     
     let taquin = s.parse::<Taquin>().unwrap();
-    let mut solver = Solver::new(taquin);
+   /* let mut solver = Solver::new(taquin);
     solver.with_heuristic(Solver::derangement_heuristic);
     if !solver.is_solvable() {
         println!("this is unsolvable");
         return ;
     }
-    solver.astar();*/
-    let c = conf::Conf::new();
+    solver.astar();
+*/
+    let mut c = Conf::new();
+    c.window_mode = WindowMode {
+        width: npuzzle::game::WINDOW_SIZE,
+        height: npuzzle::game::WINDOW_SIZE,
+        .. Default::default()       
+    };
+
     let ctx = &mut Context::load_from_conf("helloworld", "ggez", c).unwrap();
 
-    // We add the CARGO_MANIFEST_DIR/resources do the filesystems paths so
-    // we we look in the cargo project for files.
     if let Ok(manifest_dir) = env::var("CARGO_MANIFEST_DIR") {
         let mut path = path::PathBuf::from(manifest_dir);
         path.push("resources");
         ctx.filesystem.mount(&path, true);
     }
 
-    let state = &mut MainState::new(ctx).unwrap();
+    let state = &mut MainState::new(ctx, taquin).unwrap();
     if let Err(e) = event::run(ctx, state) {
         println!("Error encountered: {}", e);
     } else {

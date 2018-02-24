@@ -3,6 +3,8 @@ use std::str::FromStr;
 use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+extern crate ggez;
+use ggez::event::Keycode;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dir {
@@ -21,20 +23,30 @@ impl Dir {
             Dir::Up => Dir::Down,
         }
     }
+    pub fn from_keycode(keycode: Keycode) -> Option<Self> {
+        Some(match keycode {
+            Keycode::Up => Dir::Down,
+            Keycode::Down => Dir::Up,
+            Keycode::Left => Dir::Right,
+            Keycode::Right => Dir::Left,
+            _ => { return None; },
+        })
+    }
+
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Taquin {
     n: usize,
-    pieces: Vec<u64>,
+    pub pieces: Vec<u64>,
     cur_pos: usize,
 }
 
 impl Hash for Taquin {
-	fn hash<H>(&self, state: &mut H)
-		where H: Hasher {
-		self.pieces.hash(state)
-	}
+    fn hash<H>(&self, state: &mut H)
+        where H: Hasher {
+            self.pieces.hash(state)
+        }
 }
 
 impl Taquin {
@@ -94,6 +106,7 @@ impl Taquin {
             cur_pos: index_to_go,
         })
     }
+
     pub fn spiral(n: usize) -> Self {
         let mut pieces: Vec<u64> = vec![0; n * n];
         let mut i = 0;
@@ -121,8 +134,8 @@ impl Taquin {
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
-	
-	/// Get current dimension of the taquin
+
+    /// Get current dimension of the taquin
     pub fn dim(&self) -> usize {
         self.n
     }
@@ -132,6 +145,10 @@ impl Taquin {
         let n: i64 = self.n as i64;
         (n / 2 - index_pieces % n).abs() as u64 + ((n - 1)/ 2 - index_pieces / n).abs() as u64
     }
+    pub fn get_index_spiral(&self, nb: u64, spiral: &Taquin) -> usize {
+        spiral.iter().position(|&x| x == nb).unwrap()
+    }
+
     pub fn nb_transposition(&self, spiral: &Taquin) -> u64 {
         let mut trans_count = 0;
         let mut pieces = self.pieces.clone();

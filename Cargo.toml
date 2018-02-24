@@ -5,3 +5,5 @@ authors = ["vcombey <vcombey@student.42.fr>"]
 
 [dependencies]
 ggez = "0.4"
+image = "0.18.0"
+itertools = "0.7.6"
