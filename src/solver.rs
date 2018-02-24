@@ -1,7 +1,7 @@
 use taquin::Taquin;
 use	state::State;
 use	std::collections::HashSet;
-use maxHeap::BinaryHeap;
+use max_heap::BinaryHeap;
 
 pub struct Solver {
     spiral: Taquin,
@@ -13,17 +13,21 @@ pub struct Solver {
 impl Solver {
 	const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
 	const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
-	pub fn default_heuristic(state: &State, spiral: &Taquin) -> f32 {
-        1.0
+	pub fn default_heuristic(_state: &State, _spiral: &Taquin) -> f32 {
+        0.0
     }
 
 	pub fn manhattan_heuristic(state: &State, spiral: &Taquin) -> f32 {
-        state.get_taquin().manhattan_heuristic(spiral)
+        state.get_taquin().manhattan_heuristic(spiral) as f32 * 10.0
+    }
+
+	pub fn derangement_heuristic(state: &State, spiral: &Taquin) -> f32 {
+        state.get_taquin().derangement_heuristic(spiral) as f32 * 10.0
     }
 
     pub fn new(taquin: Taquin) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
-         let closed_set = HashSet::with_capacity(Self::DEFAULT_CLOSED_SET_SIZE);
+        let closed_set = HashSet::with_capacity(Self::DEFAULT_CLOSED_SET_SIZE);
 		let spiral = Taquin::spiral(taquin.dim());
 		open_set.push(State::new(None, 0.0, taquin.clone()));
 		//closed_set.insert(State::new(None, 0.0, taquin));
@@ -61,14 +65,15 @@ impl Solver {
 	}
     /// A* algorithm
     pub fn astar(&mut self) {
+        let mut i = 0;
         while !self.open_set.is_empty() {
             if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
                 println!("solution found");
                 // the solution is found
                 break ;
             }
-
             let current_state = self.open_set.pop().expect("Tried to pop none existing open state");
+            i+=1;
 
             //println!("current_state: {}", current_state);
             for mut state in current_state.iter_on_possible_states() {
@@ -97,20 +102,21 @@ impl Solver {
                         }
                     }
                 }
-
             }
             if !self.closed_set.insert(current_state) {
                 panic!("can't be already in closed set ?");
             }
         }
-        self.unwind_solution_path(self.open_set.peek().unwrap());
+        self.unwind_solution_path(self.open_set.peek().unwrap(), 0);
+        println!("complexity in time: {}", i);
+        println!("complexity in size: {}", self.closed_set.len() + self.open_set.len());
     }
 
-    fn unwind_solution_path(&self, state: &State) {
+    fn unwind_solution_path(&self, state: &State, nb_move: usize) {
         match state.predecessor {
-            None => {return;},
+            None => println!("nb move: {}", nb_move),
             Some(p) => {
-                self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
+                self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap(), nb_move + 1);
                 println!("{}", state.get_taquin());
             }
         }

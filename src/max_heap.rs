@@ -1,6 +1,5 @@
 use core::ops::{Deref, DerefMut};
-use core::iter::{FromIterator};
-use core::mem::{swap, size_of};
+use core::mem::{swap};
 use core::ptr;
 use core::fmt;
 

@@ -41,7 +41,7 @@ impl Taquin {
     pub fn new(n: usize, pieces: Vec<u64>) -> Self {
         debug_assert!((0..n).all(|i| pieces.iter().any(|&k| k == i as u64)));
         let cur_pos = pieces.iter().position(|&x| x == 0).unwrap();
-        assert_eq!(pieces.len(), n * n);
+        debug_assert_eq!(pieces.len(), n * n);
         Taquin {
             n,
             pieces,
@@ -148,17 +148,21 @@ impl Taquin {
     /// calculate the manhattan distance between two position represended as the
     /// index of the piece
     fn manhattan_distance(index_1: i64, index_2: i64, n: i64) -> u64 {
-        (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64 
+        (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64
     }
-    pub fn manhattan_heuristic(&self, spiral: &Taquin) -> f32 {
+    pub fn manhattan_heuristic(&self, spiral: &Taquin) -> u64 {
         let mut dist = 0;
         for (index_spiral, nb) in spiral.iter().enumerate() {
-            let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
-            if index_spiral != index_pieces {
-                dist += Self::manhattan_distance(index_pieces as i64, index_spiral as i64, self.n as i64);
+            let index_piece = self.pieces.iter().position(|&x| x == *nb).unwrap();
+            if index_spiral != index_piece {
+                dist += Self::manhattan_distance(index_piece as i64, index_spiral as i64, self.n as i64);
             }
         }
-        dist as f32
+        dist
+    }
+    /// the nb of pieces which are not in place
+    pub fn derangement_heuristic(&self, spiral: &Taquin) -> u64 {
+        self.pieces.iter().zip(spiral.iter()).map(|(a, b)| if a != b {1} else {0}).sum()
     }
     pub fn is_solved(&self, spiral: &Taquin) -> bool {
         self.pieces.iter()
