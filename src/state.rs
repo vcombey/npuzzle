@@ -36,6 +36,15 @@ impl State {
 		}
 	}
 
+	/// Returns weither or not the state of the taquin is solvable
+    pub fn is_solvable(&self) -> bool {
+        let nb_trans = self.taquin.nb_transposition();
+        let nb_move = self.taquin.nb_move_zero();
+
+        // the taquin is solvable if nb_trans and nb_move have the same parity
+        (nb_trans + nb_move) % 2 == 0
+    }
+
 	pub fn get_hash(&self) -> u64 {
 		self.hash
 	}
@@ -143,6 +152,7 @@ impl Display for State {
 #[cfg(test)]
 mod test {
     use super::*;
+    use lazy_static;
     #[test]
     fn neighbours() {
         let t = "3
@@ -160,5 +170,25 @@ mod test {
             println!("{:?}", neighbour);
             assert_eq!(neighbour, State::new(None, 0.0, t.clone().move_piece(dir).unwrap()));
         }
+    }
+    #[test]
+    fn solvable() {
+        lazy_static::initialize(&::taquin::static_spiral);
+        let taquin = Taquin::new(3, vec![0,8,3,1,6,4,5,7,2]);
+        let mut s = ::taquin::static_spiral.lock().unwrap();
+        (*s) = Taquin::spiral(taquin.dim()); 
+        drop(s);
+        let initial_state = State::new(None, 0.0, taquin.clone());
+        assert!(initial_state.is_solvable());
+    }
+    #[test]
+    fn unsolvable() {
+        lazy_static::initialize(&::taquin::static_spiral);
+        let taquin = Taquin::new(3, vec![1,7,8,2,0,5,3,4,6]);
+        let mut s = ::taquin::static_spiral.lock().unwrap();
+        (*s) = Taquin::spiral(taquin.dim()); 
+        drop(s);
+        let initial_state = State::new(None, 0.0, taquin.clone());
+        assert!(!initial_state.is_solvable());
     }
 }

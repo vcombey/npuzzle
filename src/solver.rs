@@ -20,11 +20,10 @@ impl Solver {
         state.get_taquin().manhattan_heuristic()
     }
 
-    pub fn new(taquin: Taquin) -> Self {
+    pub fn new(initial_state: State) -> Self {
     	let mut open_set = BinaryHeap::with_capacity(Self::DEFAULT_OPEN_SET_SIZE);
          let closed_set = HashSet::with_capacity(Self::DEFAULT_CLOSED_SET_SIZE);
-		open_set.push(State::new(None, 0.0, taquin.clone()));
-		//closed_set.insert(State::new(None, 0.0, taquin));
+		open_set.push(initial_state);
         Solver {
 			heuristic: Solver::default_heuristic,
 			open_set,
@@ -34,17 +33,6 @@ impl Solver {
 
     pub fn with_heuristic(&mut self, heuristic: fn(&State) -> f32) {
         self.heuristic = heuristic;
-    }
-
-	/// Returns weither or not the inital state of the taquin is solvable
-    pub fn is_solvable(&self) -> bool {
-        let taquin = self.open_set.peek().unwrap().get_taquin();
-
-        let nb_trans = taquin.nb_transposition();
-        let nb_move = taquin.nb_move_zero();
-
-        // the taquin is solvable if nb_trans and nb_move have the same parity
-        (nb_trans + nb_move) % 2 == 0
     }
 
 	/// Returns weither or not the considered state in is the open set
@@ -100,33 +88,9 @@ impl Solver {
                 panic!("can't be already in closed set ?");
             }
         }
-        //self.unwind_solution_path(self.open_set.peek().unwrap());
     }
-
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use lazy_static;
-    #[test]
-    fn solvable() {
-        lazy_static::initialize(&::taquin::static_spiral);
-        let taquin = Taquin::new(3, vec![0,8,3,1,6,4,5,7,2]);
-        let mut s = ::taquin::static_spiral.lock().unwrap();
-        (*s) = Taquin::spiral(taquin.dim()); 
-        drop(s);
-        let solver = Solver::new(taquin);
-        assert!(solver.is_solvable());
-    }
-    #[test]
-    fn unsolvable() {
-        lazy_static::initialize(&::taquin::static_spiral);
-        let taquin = Taquin::new(3, vec![1,7,8,2,0,5,3,4,6]);
-        let mut s = ::taquin::static_spiral.lock().unwrap();
-        (*s) = Taquin::spiral(taquin.dim()); 
-        drop(s);
-        let solver = Solver::new(taquin);
-        assert!(!solver.is_solvable());
-    }
 }

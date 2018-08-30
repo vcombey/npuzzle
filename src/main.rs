@@ -45,12 +45,13 @@ fn main() {
     (*s) = Taquin::spiral(taquin.dim()); 
     drop(s);
     //println!("{:?}", taquin);
-    let mut solver = Solver::new(taquin);
-    solver.with_heuristic(Solver::manhattan_heuristic);
-    if !solver.is_solvable() {
+    let initial_state = State::new(None, 0.0, taquin.clone());
+    if !initial_state.is_solvable() {
         println!("this is unsolvable");
         return ;
     }
+    let mut solver = Solver::new(initial_state);
+    solver.with_heuristic(Solver::manhattan_heuristic);
     solver.astar();
     unwind_solution_path(&solver.closed_set, &solver.open_set.peek().unwrap()); 
 }
