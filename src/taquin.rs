@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::sync::Mutex;
 
 lazy_static! {
-    pub static ref static_spiral: Mutex<Taquin> = Mutex::new(Taquin::spiral(1));
+    pub static ref static_spiral: Mutex<Taquin> = Mutex::new(Taquin::spiral(2));
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -277,6 +277,7 @@ impl From<ParseIntError> for ParseTaquinError {
 #[cfg(test)]
 mod test {
     use super::*;
+    use lazy_static;
     #[test]
     fn empty() {
         let s = "# This puzzle is solvable
@@ -476,11 +477,18 @@ mod test {
     #[test]
     fn solved() {
         let taquin = Taquin::spiral(42);
-        assert!(taquin.is_solved(&taquin));
+        let mut s = ::taquin::static_spiral.lock().unwrap();
+        (*s) = Taquin::spiral(taquin.dim()); 
+        drop(s);
+        assert!(taquin.is_solved());
     }
     #[test]
     fn unsolved() {
+        lazy_static::initialize(&::taquin::static_spiral);
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
+        let mut s = ::taquin::static_spiral.lock().unwrap();
+        (*s) = Taquin::spiral(taquin.dim()); 
+        drop(s);
         assert!(!taquin.is_solved());
     }
     #[test]

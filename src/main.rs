@@ -1,9 +1,11 @@
 extern crate npuzzle;
 use npuzzle::{taquin, taquin::Taquin};
 use npuzzle::solver::Solver;
+use	npuzzle::state::State;
 use std::fs::File;
 use std::io::Read;
 use std::env;
+use	std::collections::HashSet;
 
 fn read_file(filename: &str) -> Result<String, std::io::Error> {
     let mut f = File::open(filename)?;
@@ -11,6 +13,16 @@ fn read_file(filename: &str) -> Result<String, std::io::Error> {
     f.read_to_string(&mut s)?;
     Ok(s)
 }
+
+    fn unwind_solution_path(closed_set: &HashSet<State>, state: &State) {
+        match state.predecessor {
+            None => {return;},
+            Some(p) => {
+                unwind_solution_path(closed_set, closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
+                println!("{}", state.get_taquin());
+            }
+        }
+    }
 
 fn main() {
     let args: Vec<String> = env::args().collect();

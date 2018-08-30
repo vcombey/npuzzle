@@ -100,32 +100,32 @@ impl Solver {
                 panic!("can't be already in closed set ?");
             }
         }
-        self.unwind_solution_path(self.open_set.peek().unwrap());
+        //self.unwind_solution_path(self.open_set.peek().unwrap());
     }
 
-    fn unwind_solution_path(&self, state: &State) {
-        match state.predecessor {
-            None => {return;},
-            Some(p) => {
-                self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
-                println!("{}", state.get_taquin());
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use lazy_static;
     #[test]
     fn solvable() {
+        lazy_static::initialize(&::taquin::static_spiral);
         let taquin = Taquin::new(3, vec![0,8,3,1,6,4,5,7,2]);
+        let mut s = ::taquin::static_spiral.lock().unwrap();
+        (*s) = Taquin::spiral(taquin.dim()); 
+        drop(s);
         let solver = Solver::new(taquin);
         assert!(solver.is_solvable());
     }
     #[test]
     fn unsolvable() {
+        lazy_static::initialize(&::taquin::static_spiral);
         let taquin = Taquin::new(3, vec![1,7,8,2,0,5,3,4,6]);
+        let mut s = ::taquin::static_spiral.lock().unwrap();
+        (*s) = Taquin::spiral(taquin.dim()); 
+        drop(s);
         let solver = Solver::new(taquin);
         assert!(!solver.is_solvable());
     }
