@@ -1,5 +1,5 @@
 extern crate npuzzle;
-use npuzzle::taquin::Taquin;
+use npuzzle::{taquin, taquin::Taquin};
 use npuzzle::solver::Solver;
 use std::fs::File;
 use std::io::Read;
@@ -29,6 +29,9 @@ fn main() {
     
     let taquin = s.parse::<Taquin>().unwrap();
 	let spiral = Taquin::spiral(taquin.dim());
+    let mut s = taquin::static_spiral.lock().unwrap();
+    (*s) = Taquin::spiral(taquin.dim()); 
+    drop(s);
     //println!("{:?}", taquin);
     let mut solver = Solver::new(taquin);
     solver.with_heuristic(Solver::manhattan_heuristic);

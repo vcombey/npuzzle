@@ -3,6 +3,11 @@ use std::str::FromStr;
 use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref static_spiral: Mutex<Taquin> = Mutex::new(Taquin::spiral(1));
+}
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dir {
@@ -132,10 +137,10 @@ impl Taquin {
         let n: i64 = self.n as i64;
         (n / 2 - index_pieces % n).abs() as u64 + ((n - 1)/ 2 - index_pieces / n).abs() as u64
     }
-    pub fn nb_transposition(&self, spiral: &Taquin) -> u64 {
+    pub fn nb_transposition(&self) -> u64 {
         let mut trans_count = 0;
         let mut pieces = self.pieces.clone();
-        for (index_spiral, nb) in spiral.iter().enumerate() {
+        for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
             let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
 
             if index_spiral != index_pieces {
@@ -150,9 +155,9 @@ impl Taquin {
     fn manhattan_distance(index_1: i64, index_2: i64, n: i64) -> u64 {
         (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64 
     }
-    pub fn manhattan_heuristic(&self, spiral: &Taquin) -> f32 {
+    pub fn manhattan_heuristic(&self) -> f32 {
         let mut dist = 0;
-        for (index_spiral, nb) in spiral.iter().enumerate() {
+        for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
             if index_spiral != index_pieces {
                 dist += Self::manhattan_distance(index_pieces as i64, index_spiral as i64, self.n as i64);
@@ -160,9 +165,9 @@ impl Taquin {
         }
         dist as f32
     }
-    pub fn is_solved(&self, spiral: &Taquin) -> bool {
+    pub fn is_solved(&self) -> bool {
         self.pieces.iter()
-            .zip(spiral.iter())
+            .zip(static_spiral.lock().unwrap().iter())
             .all(|(x, y)| x == y)
     }
 }
@@ -476,7 +481,7 @@ mod test {
     #[test]
     fn unsolved() {
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
-        assert!(!taquin.is_solved(&Taquin::spiral(42)));
+        assert!(!taquin.is_solved());
     }
     #[test]
     fn oposite() {

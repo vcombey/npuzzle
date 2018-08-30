@@ -55,8 +55,8 @@ impl State {
 		&self.taquin
 	}
 
-	pub fn is_solved(&self, spiral: &Taquin) -> bool {
-		self.taquin.is_solved(spiral)
+	pub fn is_solved(&self) -> bool {
+		self.taquin.is_solved()
 	}
 	
 	pub fn iter_on_possible_states<'a>(&'a self) -> Neighbours<'a> {
