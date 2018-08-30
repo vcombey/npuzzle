@@ -5,8 +5,8 @@ use maxHeap::BinaryHeap;
 
 pub struct Solver {
     spiral: Taquin,
-	open_set: BinaryHeap<State>,
-	closed_set: HashSet<State>,
+	pub open_set: BinaryHeap<State>,
+	pub closed_set: HashSet<State>,
 	heuristic: fn(&State) -> f32,
 }
 
@@ -59,7 +59,7 @@ impl Solver {
 	fn is_in_closed_set(&self, state: &State) -> bool {
 		self.closed_set.get(state).is_some()
 	}
-    /// A* algorithm
+    /// A* algorithm, return final state
     pub fn astar(&mut self) {
         while !self.open_set.is_empty() {
             if self.open_set.peek().expect("Tried to peek none existing open state").is_solved() {
@@ -103,18 +103,18 @@ impl Solver {
                 panic!("can't be already in closed set ?");
             }
         }
-        self.unwind_solution_path(self.open_set.peek().unwrap());
+        //self.unwind_solution_path(self.open_set.peek().unwrap());
     }
 
-    fn unwind_solution_path(&self, state: &State) {
-        match state.predecessor {
-            None => {return;},
-            Some(p) => {
-                self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
-                println!("{}", state.get_taquin().transpose_from_taquin_to_spiral(&self.spiral));
-            }
-        }
-    }
+    //fn unwind_solution_path(&self, state: &State) {
+    //    match state.predecessor {
+    //        None => {return;},
+    //        Some(p) => {
+    //            self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
+    //            println!("{}", state.get_taquin().transpose_from_taquin_to_spiral(&self.spiral));
+    //        }
+    //    }
+    //}
 }
 
 #[cfg(test)]
