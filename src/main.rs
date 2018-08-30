@@ -27,9 +27,12 @@ fn main() {
     };
        println!("{}", s);
     
-    let taquin = s.parse::<Taquin>().unwrap();
+       println!("taquin solved{}", Taquin::solved(3));
+    let mut taquin = s.parse::<Taquin>().unwrap();
 	let spiral = Taquin::spiral(taquin.dim());
-    //println!("{:?}", taquin);
+    println!("taquin before:{}", taquin);
+    taquin = taquin.transpose_from_spiral_to_taquin(&spiral);
+    println!("taquin after:{}", taquin);
     let mut solver = Solver::new(taquin);
     solver.with_heuristic(Solver::manhattan_heuristic);
     if !solver.is_solvable() {

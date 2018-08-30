@@ -1,8 +1,10 @@
 use std::num::ParseIntError;
+use std::ops::Index;
 use std::str::FromStr;
 use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::fmt::Display;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Dir {
@@ -38,17 +40,48 @@ impl Hash for Taquin {
 }
 
 impl Taquin {
-    pub fn new(n: usize, pieces: Vec<u64>) -> Self {
-        debug_assert!((0..n).all(|i| pieces.iter().any(|&k| k == i as u64)));
+    /// take the dimension of the taquin and the taquin
+    pub fn new(dim: usize, pieces: Vec<u64>) -> Self {
+        debug_assert!((0..dim * dim).all(|i| pieces.iter().any(|&k| k == i as u64)));
         let cur_pos = pieces.iter().position(|&x| x == 0).unwrap();
-        assert_eq!(pieces.len(), n * n);
+        assert_eq!(pieces.len(), dim * dim);
         Taquin {
-            n,
+            n: dim,
             pieces,
             cur_pos,
         }
     }
+    pub fn solved(dim: usize) -> Self {
+        Self::new(dim, (1..dim * dim + 1).map(|x| (x % (dim * dim)) as u64).collect())
+    }
     /// get indice of piece next 'i' in direction 'dir'.
+    pub fn transpose_from_spiral_to_taquin(self, spiral: &Self) -> Self {
+        self.transpose_from_a_to_b(spiral, &Self::solved(self.n))
+        //let len = self.pieces.len();
+        //let mut pieces: Vec<u64> = vec![0; len];
+        //for (i, a) in self.iter().enumerate() {
+        //    if spiral[i] == 0 {
+        //        pieces[len - 1] = *a;
+        //    } else {
+        //        pieces[(spiral[i] - 1) as usize] = *a;
+        //    }
+        //}
+        //Self::new(self.dim(), pieces)
+
+    }
+    pub fn transpose_from_taquin_to_spiral(&self, spiral: &Self) -> Self {
+        self.transpose_from_a_to_b(&Self::solved(self.n), spiral)
+    }
+    pub fn transpose_from_a_to_b(&self, a: &Self, b: &Self) -> Self {
+        let len = self.pieces.len();
+        let mut pieces: Vec<u64> = vec![0; len];
+        for (i, x) in self.iter().enumerate() {
+            let index_b = b.iter().position(|&x| x == a[i]).unwrap();
+            pieces[index_b] = *x;
+        }
+        Self::new(self.dim(), pieces)
+
+    }
     fn get_index(dir: &Dir, i: usize, n: usize) -> Option<usize> {
         match *dir {
             Dir::Right => {
@@ -132,15 +165,28 @@ impl Taquin {
         let n: i64 = self.n as i64;
         (n / 2 - index_pieces % n).abs() as u64 + ((n - 1)/ 2 - index_pieces / n).abs() as u64
     }
-    pub fn nb_transposition(&self, spiral: &Taquin) -> u64 {
+    //pub fn nb_transposition(&self, spiral: &Taquin) -> u64 {
+    //    let mut trans_count = 0;
+    //    let mut pieces = self.pieces.clone();
+    //    for (index_spiral, nb) in spiral.iter().enumerate() {
+    //        let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
+
+    //        if index_spiral != index_pieces {
+    //            trans_count+=1;
+    //            pieces.swap(index_pieces, index_spiral);
+    //        }
+    //    }
+    //    trans_count
+    //}
+    pub fn nb_transposition(&self) -> u64 {
         let mut trans_count = 0;
         let mut pieces = self.pieces.clone();
-        for (index_spiral, nb) in spiral.iter().enumerate() {
-            let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
+        for (i, nb) in self.iter().enumerate() {
+            let index_pieces = pieces.iter().position(|&x| x == (i + 1) as u64 % self.pieces.len() as u64).unwrap();
 
-            if index_spiral != index_pieces {
+            if i != index_pieces {
                 trans_count+=1;
-                pieces.swap(index_pieces, index_spiral);
+                pieces.swap(index_pieces, i);
             }
         }
         trans_count
@@ -150,24 +196,36 @@ impl Taquin {
     fn manhattan_distance(index_1: i64, index_2: i64, n: i64) -> u64 {
         (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64 
     }
-    pub fn manhattan_heuristic(&self, spiral: &Taquin) -> f32 {
+    //pub fn manhattan_heuristic(&self, spiral: &Taquin) -> f32 {
+    //    let mut dist = 0;
+    //    for (index_spiral, nb) in spiral.iter().enumerate() {
+    //        let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
+    //        if index_spiral != index_pieces {
+    //            dist += Self::manhattan_distance(index_pieces as i64, index_spiral as i64, self.n as i64);
+    //        }
+    //    }
+    //    dist as f32
+    //}
+    pub fn manhattan_heuristic(&self) -> f32 {
         let mut dist = 0;
-        for (index_spiral, nb) in spiral.iter().enumerate() {
-            let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
-            if index_spiral != index_pieces {
-                dist += Self::manhattan_distance(index_pieces as i64, index_spiral as i64, self.n as i64);
+        for (i, nb) in self.iter().enumerate() {
+            let index_pieces = self.pieces.iter().position(|&x| x == ((i + 1) as usize % self.pieces.len()) as u64).unwrap();
+            if i != index_pieces {
+                dist += Self::manhattan_distance(index_pieces as i64, i as i64, self.n as i64);
             }
         }
         dist as f32
     }
-    pub fn is_solved(&self, spiral: &Taquin) -> bool {
-        self.pieces.iter()
-            .zip(spiral.iter())
-            .all(|(x, y)| x == y)
+//    pub fn is_solved(&self, spiral: &Taquin) -> bool {
+//        self.pieces.iter()
+//            .zip(spiral.iter())
+//            .all(|(x, y)| x == y)
+//    }
+    pub fn is_solved(&self) -> bool {
+        self.pieces.iter().enumerate()
+            .all(|(i, x)| (i + 1) as u64 == *x || (i == self.pieces.len() - 1 && *x == 0))
     }
 }
-
-use std::fmt::Display;
 
 impl Display for Taquin {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -187,6 +245,14 @@ impl Display for Taquin {
     }
 }
 
+impl Index<usize> for Taquin {
+    type Output = u64;
+
+    fn index(&self, i: usize) -> &u64 {
+        &self.pieces[i]
+    }
+}
+
 impl FromStr for Taquin {
     type Err = ParseTaquinError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -197,7 +263,7 @@ impl FromStr for Taquin {
                     .unwrap()
                     .trim() // can't fail
             })
-        .filter(|l| l != &"");
+            .filter(|l| l != &"");
 
         // get dimension
         let n: usize = lines.next().ok_or(ParseTaquinError::Empty)?.trim().parse()?;
@@ -301,8 +367,8 @@ mod test {
             Taquin::new(
                 3,
                 vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-                )
-            );
+            )
+        );
     }
     #[test]
     fn tabulations() {
@@ -316,8 +382,8 @@ mod test {
             Taquin::new(
                 3,
                 vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-                )
-            );
+            )
+        );
     }
     #[test]
     fn bad_integer() {
@@ -360,36 +426,36 @@ mod test {
             Taquin::new(
                 1,
                 vec![0],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(2),
             Taquin::new(
                 2,
                 vec![1,2,0,3],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(3),
             Taquin::new(
                 3,
                 vec![1,2,3,8,0,4,7,6,5],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(4),
             Taquin::new(
                 4,
                 vec![1,2,3,4,12,13,14,5,11,0,15,6,10,9,8,7],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(5),
             Taquin::new(
                 5,
                 vec![1,2,3,4,5,16,17,18,19,6,15,24,0,20,7,14,23,22,21,8,13,12,11,10,9],
-                )
-            );
+            )
+        );
     }
     #[test]
     fn move_piece() {

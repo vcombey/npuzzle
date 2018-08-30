@@ -7,18 +7,18 @@ pub struct Solver {
     spiral: Taquin,
 	open_set: BinaryHeap<State>,
 	closed_set: HashSet<State>,
-	heuristic: fn(&State, &Taquin) -> f32,
+	heuristic: fn(&State) -> f32,
 }
 
 impl Solver {
 	const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
 	const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
-	pub fn default_heuristic(state: &State, spiral: &Taquin) -> f32 {
+	pub fn default_heuristic(state: &State) -> f32 {
         1.0
     }
 
-	pub fn manhattan_heuristic(state: &State, spiral: &Taquin) -> f32 {
-        state.get_taquin().manhattan_heuristic(spiral)
+	pub fn manhattan_heuristic(state: &State) -> f32 {
+        state.get_taquin().manhattan_heuristic()
     }
 
     pub fn new(taquin: Taquin) -> Self {
@@ -35,7 +35,7 @@ impl Solver {
         }
     }
 
-    pub fn with_heuristic(&mut self, heuristic: fn(&State, &Taquin) -> f32) {
+    pub fn with_heuristic(&mut self, heuristic: fn(&State) -> f32) {
         self.heuristic = heuristic;
     }
 
@@ -43,7 +43,7 @@ impl Solver {
     pub fn is_solvable(&self) -> bool {
         let taquin = self.open_set.peek().unwrap().get_taquin();
 
-        let nb_trans = taquin.nb_transposition(&self.spiral);
+        let nb_trans = taquin.nb_transposition();
         let nb_move = taquin.nb_move_zero();
 
         // the taquin is solvable if nb_trans and nb_move have the same parity
@@ -62,7 +62,7 @@ impl Solver {
     /// A* algorithm
     pub fn astar(&mut self) {
         while !self.open_set.is_empty() {
-            if self.open_set.peek().expect("Tried to peek none existing open state").is_solved(&self.spiral) {
+            if self.open_set.peek().expect("Tried to peek none existing open state").is_solved() {
                 println!("solution found");
                 // the solution is found
                 break ;
@@ -72,7 +72,7 @@ impl Solver {
 
             //println!("current_state: {}", current_state);
             for mut state in current_state.iter_on_possible_states() {
-                let hcost = (self.heuristic)(&state, &self.spiral);
+                let hcost = (self.heuristic)(&state);
                 state.set_hcost(hcost);
 
                 //println!("neighbour: {}", state);
@@ -111,7 +111,7 @@ impl Solver {
             None => {return;},
             Some(p) => {
                 self.unwind_solution_path(self.closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
-                println!("{}", state.get_taquin());
+                println!("{}", state.get_taquin().transpose_from_taquin_to_spiral(&self.spiral));
             }
         }
     }
