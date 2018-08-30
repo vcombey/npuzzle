@@ -14,15 +14,15 @@ fn read_file(filename: &str) -> Result<String, std::io::Error> {
     Ok(s)
 }
 
-    fn unwind_solution_path(closed_set: &HashSet<State>, state: &State) {
-        match state.predecessor {
-            None => {return;},
-            Some(p) => {
-                unwind_solution_path(closed_set, closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
-                println!("{}", state.get_taquin());
-            }
+fn unwind_solution_path(closed_set: &HashSet<State>, state: &State) {
+    match state.predecessor {
+        None => {return;},
+        Some(p) => {
+            unwind_solution_path(closed_set, closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
+            println!("{}", state.get_taquin());
         }
     }
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -37,10 +37,10 @@ fn main() {
             return;
         }
     };
-       println!("{}", s);
+    println!("{}", s);
     
     let taquin = s.parse::<Taquin>().unwrap();
-	let spiral = Taquin::spiral(taquin.dim());
+    let spiral = Taquin::spiral(taquin.dim());
     let mut s = taquin::static_spiral.lock().unwrap();
     (*s) = Taquin::spiral(taquin.dim()); 
     drop(s);
@@ -52,4 +52,5 @@ fn main() {
         return ;
     }
     solver.astar();
+    unwind_solution_path(&solver.closed_set, &solver.open_set.peek().unwrap()); 
 }

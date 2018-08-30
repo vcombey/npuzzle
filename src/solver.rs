@@ -4,8 +4,8 @@ use	std::collections::HashSet;
 use maxHeap::BinaryHeap;
 
 pub struct Solver {
-	open_set: BinaryHeap<State>,
-	closed_set: HashSet<State>,
+	pub open_set: BinaryHeap<State>,
+	pub closed_set: HashSet<State>,
 	heuristic: fn(&State) -> f32,
 }
 
