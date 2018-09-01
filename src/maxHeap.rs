@@ -1,12 +1,12 @@
-use core::ops::{Deref, DerefMut};
-use core::iter::{FromIterator};
-use core::mem::{swap, size_of};
-use core::ptr;
 use core::fmt;
+use core::iter::FromIterator;
+use core::mem::{size_of, swap};
+use core::ops::{Deref, DerefMut};
+use core::ptr;
 
+use std::cmp::PartialEq;
 use std::slice;
 use std::vec::{self, Vec};
-use std::cmp::PartialEq;
 
 pub struct BinaryHeap<T> {
     data: Vec<T>,
@@ -17,15 +17,11 @@ pub struct PeekMut<'a, T: 'a + Ord> {
     sift: bool,
 }
 
-
 impl<'a, T: Ord + fmt::Debug> fmt::Debug for PeekMut<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("PeekMut")
-         .field(&self.heap.data[0])
-         .finish()
+        f.debug_tuple("PeekMut").field(&self.heap.data[0]).finish()
     }
 }
-
 
 impl<'a, T: Ord> Drop for PeekMut<'a, T> {
     fn drop(&mut self) {
@@ -35,14 +31,12 @@ impl<'a, T: Ord> Drop for PeekMut<'a, T> {
     }
 }
 
-
 impl<'a, T: Ord> Deref for PeekMut<'a, T> {
     type Target = T;
     fn deref(&self) -> &T {
         &self.heap.data[0]
     }
 }
-
 
 impl<'a, T: Ord> DerefMut for PeekMut<'a, T> {
     fn deref_mut(&mut self) -> &mut T {
@@ -52,7 +46,7 @@ impl<'a, T: Ord> DerefMut for PeekMut<'a, T> {
 
 impl<'a, T: Ord> PeekMut<'a, T> {
     /// Removes the peeked value from the heap and returns it.
-    
+
     pub fn pop(mut this: PeekMut<'a, T>) -> T {
         let value = this.heap.pop().unwrap();
         this.sift = false;
@@ -60,17 +54,17 @@ impl<'a, T: Ord> PeekMut<'a, T> {
     }
 }
 
-
 impl<T: Clone> Clone for BinaryHeap<T> {
     fn clone(&self) -> Self {
-        BinaryHeap { data: self.data.clone() }
+        BinaryHeap {
+            data: self.data.clone(),
+        }
     }
 
     fn clone_from(&mut self, source: &Self) {
         self.data.clone_from(&source.data);
     }
 }
-
 
 impl<T: Ord> Default for BinaryHeap<T> {
     /// Creates an empty `BinaryHeap<T>`.
@@ -79,7 +73,6 @@ impl<T: Ord> Default for BinaryHeap<T> {
         BinaryHeap::new()
     }
 }
-
 
 impl<T: fmt::Debug + Ord> fmt::Debug for BinaryHeap<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -129,7 +122,9 @@ impl<T: Ord> BinaryHeap<T> {
     /// ```
 
     pub fn with_capacity(capacity: usize) -> BinaryHeap<T> {
-        BinaryHeap { data: Vec::with_capacity(capacity) }
+        BinaryHeap {
+            data: Vec::with_capacity(capacity),
+        }
     }
 
     /// Returns an iterator visiting all values in the underlying vector, in
@@ -150,7 +145,9 @@ impl<T: Ord> BinaryHeap<T> {
     /// ```
 
     pub fn iter(&self) -> Iter<T> {
-        Iter { iter: self.data.iter() }
+        Iter {
+            iter: self.data.iter(),
+        }
     }
 
     /// Returns the greatest item in the binary heap, or `None` if it is empty.
@@ -566,12 +563,9 @@ pub struct Iter<'a, T: 'a> {
     iter: slice::Iter<'a, T>,
 }
 
-
 impl<'a, T: 'a + fmt::Debug> fmt::Debug for Iter<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Iter")
-            .field(&self.iter.as_slice())
-            .finish()
+        f.debug_tuple("Iter").field(&self.iter.as_slice()).finish()
     }
 }
 
@@ -579,7 +573,9 @@ impl<'a, T: 'a + fmt::Debug> fmt::Debug for Iter<'a, T> {
 
 impl<'a, T> Clone for Iter<'a, T> {
     fn clone(&self) -> Iter<'a, T> {
-        Iter { iter: self.iter.clone() }
+        Iter {
+            iter: self.iter.clone(),
+        }
     }
 }
 
@@ -604,7 +600,6 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
     }
 }
 
-
 /// An owning iterator over the elements of a `BinaryHeap`.
 ///
 /// This `struct` is created by the [`into_iter`] method on [`BinaryHeap`][`BinaryHeap`]
@@ -618,7 +613,6 @@ pub struct IntoIter<T> {
     iter: vec::IntoIter<T>,
 }
 
-
 impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("IntoIter")
@@ -626,7 +620,6 @@ impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
             .finish()
     }
 }
-
 
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
@@ -642,14 +635,12 @@ impl<T> Iterator for IntoIter<T> {
     }
 }
 
-
 impl<T> DoubleEndedIterator for IntoIter<T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         self.iter.next_back()
     }
 }
-
 
 /// A draining iterator over the elements of a `BinaryHeap`.
 ///
@@ -663,7 +654,6 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 pub struct Drain<'a, T: 'a> {
     iter: vec::Drain<'a, T>,
 }
-
 
 impl<'a, T: 'a> Iterator for Drain<'a, T> {
     type Item = T;
@@ -679,11 +669,9 @@ impl<'a, T: 'a> Iterator for Drain<'a, T> {
     }
 }
 
-
 impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         self.iter.next_back()
     }
 }
-

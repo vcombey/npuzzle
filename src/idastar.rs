@@ -1,4 +1,5 @@
 use num_traits::Zero;
+use std::fmt::Debug;
 use std::hash::Hash;
 
 enum Res<C> {
@@ -9,31 +10,41 @@ enum Res<C> {
 use self::Res::*;
 
 fn aux<N, C, FN, IN, FH, FS>(
-    start: N, 
-    neighbours: &FN, 
-    heuristic: &FH, 
+    start: N,
+    neighbours: &FN,
+    heuristic: &FH,
     success: &FS,
     path: &mut Vec<N>,
     g_cost: C,
     threeshold: C,
-) -> Res<C> where
+) -> Res<C>
+where
     N: Clone,
-    C: Zero + Ord + Copy,
+    C: Zero + Ord + Copy + Debug,
     FN: Fn(&N) -> IN,
     IN: IntoIterator<Item = (N, C)>,
     FH: Fn(&N) -> C,
-    FS: Fn(&N) -> bool, 
+    FS: Fn(&N) -> bool,
 {
     if success(&start) {
         path.push(start);
         return Found;
     }
     let mut min_fcost = C::zero();
-    if min_fcost > threeshold {
-        return MinFCost(min_fcost);
+    let f_cost = g_cost + heuristic(&start);
+    if f_cost > threeshold {
+        return MinFCost(f_cost);
     }
     for (n, c) in neighbours(&start) {
-        match aux(n, neighbours, heuristic, success, path, g_cost + c, threeshold) {
+        match aux(
+            n,
+            neighbours,
+            heuristic,
+            success,
+            path,
+            g_cost + c,
+            threeshold,
+        ) {
             Found => {
                 path.push(start);
                 return Found;
@@ -49,22 +60,30 @@ fn aux<N, C, FN, IN, FH, FS>(
 }
 
 pub fn idastar<N, C, FN, IN, FH, FS>(
-    start: &N, 
-    neighbours: FN, 
-    heuristic: FH, 
-    success: FS
-) -> Option<(Vec<N>, C)> where
+    start: &N,
+    neighbours: FN,
+    heuristic: FH,
+    success: FS,
+) -> Option<(Vec<N>, C)>
+where
     N: Clone,
-    C: Zero + Ord + Copy,
+    C: Zero + Ord + Copy + Debug,
     FN: Fn(&N) -> IN,
     IN: IntoIterator<Item = (N, C)>,
     FH: Fn(&N) -> C,
-    FS: Fn(&N) -> bool, 
+    FS: Fn(&N) -> bool,
 {
     let mut threeshold = heuristic(start);
     let mut path = Vec::new();
-    while let MinFCost(new_threeshold) = aux(start.clone(), &neighbours, &heuristic, &success, &mut path, C::zero(), threeshold)
-    {
+    while let MinFCost(new_threeshold) = aux(
+        start.clone(),
+        &neighbours,
+        &heuristic,
+        &success,
+        &mut path,
+        C::zero(),
+        threeshold,
+    ) {
         threeshold = new_threeshold;
     }
     //TODO: See final cost

@@ -64,7 +64,7 @@
 //                if !self.is_in_closed_set(&state) && !self.is_in_open_set(&state) {
 //                    self.open_set.push(state);
 //                }
-//                
+//
 //                else {
 //                    // get old state in the open or closed set
 //                    let &State {

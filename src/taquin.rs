@@ -1,8 +1,8 @@
-use std::num::ParseIntError;
-use std::str::FromStr;
 use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::num::ParseIntError;
+use std::str::FromStr;
 use std::sync::Mutex;
 
 lazy_static! {
@@ -36,10 +36,12 @@ pub struct Taquin {
 }
 
 impl Hash for Taquin {
-	fn hash<H>(&self, state: &mut H)
-		where H: Hasher {
-		self.pieces.hash(state)
-	}
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: Hasher,
+    {
+        self.pieces.hash(state)
+    }
 }
 
 impl Taquin {
@@ -47,16 +49,11 @@ impl Taquin {
         debug_assert!((0..n).all(|i| pieces.iter().any(|&k| k == i as u64)));
         let cur_pos = pieces.iter().position(|&x| x == 0).unwrap();
         assert_eq!(pieces.len(), n * n);
-        Taquin {
-            n,
-            pieces,
-            cur_pos,
-        }
+        Taquin { n, pieces, cur_pos }
     }
 
     pub fn sorted_neighbours<'a>(&self) -> ::std::vec::IntoIter<Taquin> {
-
-        let mut v = Vec::with_capacity(4); 
+        let mut v = Vec::with_capacity(4);
         for dir in [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter() {
             if let Some(t) = self.move_piece(*dir) {
                 v.push(t);
@@ -66,7 +63,7 @@ impl Taquin {
         v.into_iter()
         //Neighbours::new(self.clone())
     }
-    
+
     /// get indice of piece next 'i' in direction 'dir'.
     fn get_index(dir: &Dir, i: usize, n: usize) -> Option<usize> {
         match *dir {
@@ -87,8 +84,7 @@ impl Taquin {
             Dir::Left => {
                 if i == 0 {
                     None
-                }
-                else if (i - 1) % n != n - 1 {
+                } else if (i - 1) % n != n - 1 {
                     Some(i - 1)
                 } else {
                     None
@@ -140,7 +136,7 @@ impl Taquin {
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
-    
+
     /// Get current dimension of the taquin
     pub fn dim(&self) -> usize {
         self.n
@@ -149,7 +145,7 @@ impl Taquin {
     pub fn nb_move_zero(&self) -> u64 {
         let index_pieces: i64 = self.pieces.iter().position(|&x| x == 0).unwrap() as i64;
         let n: i64 = self.n as i64;
-        (n / 2 - index_pieces % n).abs() as u64 + ((n - 1)/ 2 - index_pieces / n).abs() as u64
+        (n / 2 - index_pieces % n).abs() as u64 + ((n - 1) / 2 - index_pieces / n).abs() as u64
     }
     pub fn nb_transposition(&self) -> u64 {
         let mut trans_count = 0;
@@ -158,7 +154,7 @@ impl Taquin {
             let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
 
             if index_spiral != index_pieces {
-                trans_count+=1;
+                trans_count += 1;
                 pieces.swap(index_pieces, index_spiral);
             }
         }
@@ -167,14 +163,18 @@ impl Taquin {
     /// calculate the manhattan distance between two position represended as the
     /// index of the piece
     fn manhattan_distance(index_1: i64, index_2: i64, n: i64) -> u64 {
-        (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64 
+        (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64
     }
     pub fn manhattan_heuristic(&self) -> u32 {
         let mut dist = 0;
         for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
             if index_spiral != index_pieces {
-                dist += Self::manhattan_distance(index_pieces as i64, index_spiral as i64, self.n as i64);
+                dist += Self::manhattan_distance(
+                    index_pieces as i64,
+                    index_spiral as i64,
+                    self.n as i64,
+                );
             }
         }
         dist as u32
@@ -190,7 +190,8 @@ impl Taquin {
     }
 
     pub fn is_solved(&self) -> bool {
-        self.pieces.iter()
+        self.pieces
+            .iter()
             .zip(static_spiral.lock().unwrap().iter())
             .all(|(x, y)| x == y)
     }
@@ -201,7 +202,8 @@ use std::fmt::Display;
 impl Display for Taquin {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let n = self.n;
-        let s = self.pieces
+        let s = self
+            .pieces
             .iter()
             .enumerate()
             .fold(String::new(), |acc, (i, &nb)| {
@@ -220,16 +222,20 @@ impl FromStr for Taquin {
     type Err = ParseTaquinError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // remove comments
-        let mut lines = s.lines()
+        let mut lines = s
+            .lines()
             .map(|l| {
                 l.get(..l.find('#').unwrap_or_else(|| l.len()))
                     .unwrap()
                     .trim() // can't fail
-            })
-            .filter(|l| l != &"");
+            }).filter(|l| l != &"");
 
         // get dimension
-        let n: usize = lines.next().ok_or(ParseTaquinError::Empty)?.trim().parse()?;
+        let n: usize = lines
+            .next()
+            .ok_or(ParseTaquinError::Empty)?
+            .trim()
+            .parse()?;
         if n == 0 {
             return Err(ParseTaquinError::Empty);
         }
@@ -305,7 +311,7 @@ impl From<ParseIntError> for ParseTaquinError {
 //
 //impl<'a> Neighbours<'a> {
 //    pub fn new(taquin: Taquin) -> Self {
-//                                                                            
+//
 //        Neighbours {
 //            taquin,
 //            dir: [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter(),
@@ -357,10 +363,7 @@ mod test {
             3 7 2";
         assert_eq!(
             s.parse::<Taquin>().unwrap(),
-            Taquin::new(
-                3,
-                vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-            )
+            Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2],)
         );
     }
     #[test]
@@ -372,10 +375,7 @@ mod test {
             3 7 2";
         assert_eq!(
             s.parse::<Taquin>().unwrap(),
-            Taquin::new(
-                3,
-                vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-            )
+            Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2],)
         );
     }
     #[test]
@@ -414,39 +414,27 @@ mod test {
     }
     #[test]
     fn spiral() {
-        assert_eq!(
-            Taquin::spiral(1),
-            Taquin::new(
-                1,
-                vec![0],
-            )
-        );
-        assert_eq!(
-            Taquin::spiral(2),
-            Taquin::new(
-                2,
-                vec![1,2,0,3],
-            )
-        );
+        assert_eq!(Taquin::spiral(1), Taquin::new(1, vec![0],));
+        assert_eq!(Taquin::spiral(2), Taquin::new(2, vec![1, 2, 0, 3],));
         assert_eq!(
             Taquin::spiral(3),
-            Taquin::new(
-                3,
-                vec![1,2,3,8,0,4,7,6,5],
-            )
+            Taquin::new(3, vec![1, 2, 3, 8, 0, 4, 7, 6, 5],)
         );
         assert_eq!(
             Taquin::spiral(4),
             Taquin::new(
                 4,
-                vec![1,2,3,4,12,13,14,5,11,0,15,6,10,9,8,7],
+                vec![1, 2, 3, 4, 12, 13, 14, 5, 11, 0, 15, 6, 10, 9, 8, 7],
             )
         );
         assert_eq!(
             Taquin::spiral(5),
             Taquin::new(
                 5,
-                vec![1,2,3,4,5,16,17,18,19,6,15,24,0,20,7,14,23,22,21,8,13,12,11,10,9],
+                vec![
+                    1, 2, 3, 4, 5, 16, 17, 18, 19, 6, 15, 24, 0, 20, 7, 14, 23, 22, 21, 8, 13, 12,
+                    11, 10, 9
+                ],
             )
         );
     }
@@ -463,7 +451,13 @@ mod test {
         let t = s.parse::<Taquin>().unwrap();
         let t_after = s_after.parse::<Taquin>().unwrap();
         assert_eq!(t.move_piece(Dir::Down).unwrap(), t_after);
-        assert_eq!(t.move_piece(Dir::Down).unwrap().move_piece(Dir::Up).unwrap(), t);
+        assert_eq!(
+            t.move_piece(Dir::Down)
+                .unwrap()
+                .move_piece(Dir::Up)
+                .unwrap(),
+            t
+        );
 
         let s = "3
             1 5 2
@@ -501,7 +495,13 @@ mod test {
         let t = s.parse::<Taquin>().unwrap();
         let t_after = s_after.parse::<Taquin>().unwrap();
         assert_eq!(t.move_piece(Dir::Left).unwrap(), t_after);
-        assert_eq!(t.move_piece(Dir::Left).unwrap().move_piece(Dir::Right).unwrap(), t);
+        assert_eq!(
+            t.move_piece(Dir::Left)
+                .unwrap()
+                .move_piece(Dir::Right)
+                .unwrap(),
+            t
+        );
         let s = "3
             1 5 2
             8 4 6
@@ -531,7 +531,7 @@ mod test {
     fn solved() {
         let taquin = Taquin::spiral(42);
         let mut s = ::taquin::static_spiral.lock().unwrap();
-        (*s) = Taquin::spiral(taquin.dim()); 
+        (*s) = Taquin::spiral(taquin.dim());
         drop(s);
         assert!(taquin.is_solved());
     }
@@ -540,7 +540,7 @@ mod test {
         lazy_static::initialize(&::taquin::static_spiral);
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
         let mut s = ::taquin::static_spiral.lock().unwrap();
-        (*s) = Taquin::spiral(taquin.dim()); 
+        (*s) = Taquin::spiral(taquin.dim());
         drop(s);
         assert!(!taquin.is_solved());
     }
