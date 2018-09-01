@@ -1,11 +1,14 @@
 extern crate npuzzle;
 use npuzzle::{taquin, taquin::Taquin};
-use npuzzle::solver::Solver;
-use	npuzzle::state::State;
+//use npuzzle::solver::Solver;
+use npuzzle::idastar::idastar;
+//use	npuzzle::state::State;
 use std::fs::File;
 use std::io::Read;
 use std::env;
-use	std::collections::HashSet;
+//use	std::collections::HashSet;
+use std::iter::repeat;
+//use std::slice::reverse;
 
 fn read_file(filename: &str) -> Result<String, std::io::Error> {
     let mut f = File::open(filename)?;
@@ -14,15 +17,15 @@ fn read_file(filename: &str) -> Result<String, std::io::Error> {
     Ok(s)
 }
 
-fn unwind_solution_path(closed_set: &HashSet<State>, state: &State) {
-    match state.predecessor {
-        None => {return;},
-        Some(p) => {
-            unwind_solution_path(closed_set, closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
-            println!("{}", state.get_taquin());
-        }
-    }
-}
+//fn unwind_solution_path(closed_set: &HashSet<State>, state: &State) {
+//    match state.predecessor {
+//        None => {return;},
+//        Some(p) => {
+//            unwind_solution_path(closed_set, closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
+//            println!("{}", state.get_taquin());
+//        }
+//    }
+//}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -45,13 +48,19 @@ fn main() {
     (*s) = Taquin::spiral(taquin.dim()); 
     drop(s);
     //println!("{:?}", taquin);
-    let initial_state = State::new(None, 0.0, taquin.clone());
-    if !initial_state.is_solvable() {
+   // let initial_state = State::new(None, 0.0, taquin.clone());
+    if !taquin.is_solvable() {
         println!("this is unsolvable");
         return ;
     }
-    let mut solver = Solver::new(initial_state);
-    solver.with_heuristic(Solver::manhattan_heuristic);
-    solver.astar();
-    unwind_solution_path(&solver.closed_set, &solver.open_set.peek().unwrap()); 
+    //let mut solver = Solver::new(initial_state);
+    //solver.with_heuristic(Solver::manhattan_heuristic);
+    //solver.astar();
+    //unwind_solution_path(&solver.closed_set, &solver.open_set.peek().unwrap()); 
+    let mut path = idastar(&taquin, |t| t.sorted_neighbours().zip(repeat(1)), |t| t.manhattan_heuristic(), |t| t.is_solved()).unwrap();
+
+    path.0.reverse();
+    for p in path.0 {
+        println!("{}", p);
+    }
 }

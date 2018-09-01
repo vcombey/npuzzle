@@ -53,6 +53,20 @@ impl Taquin {
             cur_pos,
         }
     }
+
+    pub fn sorted_neighbours<'a>(&self) -> ::std::vec::IntoIter<Taquin> {
+
+        let mut v = Vec::with_capacity(4); 
+        for dir in [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter() {
+            if let Some(t) = self.move_piece(*dir) {
+                v.push(t);
+            }
+        }
+        v.sort_by_key(|k| k.manhattan_heuristic());
+        v.into_iter()
+        //Neighbours::new(self.clone())
+    }
+    
     /// get indice of piece next 'i' in direction 'dir'.
     fn get_index(dir: &Dir, i: usize, n: usize) -> Option<usize> {
         match *dir {
@@ -126,8 +140,8 @@ impl Taquin {
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
-	
-	/// Get current dimension of the taquin
+    
+    /// Get current dimension of the taquin
     pub fn dim(&self) -> usize {
         self.n
     }
@@ -155,7 +169,7 @@ impl Taquin {
     fn manhattan_distance(index_1: i64, index_2: i64, n: i64) -> u64 {
         (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64 
     }
-    pub fn manhattan_heuristic(&self) -> f32 {
+    pub fn manhattan_heuristic(&self) -> u32 {
         let mut dist = 0;
         for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
@@ -163,8 +177,18 @@ impl Taquin {
                 dist += Self::manhattan_distance(index_pieces as i64, index_spiral as i64, self.n as i64);
             }
         }
-        dist as f32
+        dist as u32
     }
+
+    /// Returns weither or not the state of the taquin is solvable
+    pub fn is_solvable(&self) -> bool {
+        let nb_trans = self.nb_transposition();
+        let nb_move = self.nb_move_zero();
+
+        // the taquin is solvable if nb_trans and nb_move have the same parity
+        (nb_trans + nb_move) % 2 == 0
+    }
+
     pub fn is_solved(&self) -> bool {
         self.pieces.iter()
             .zip(static_spiral.lock().unwrap().iter())
@@ -202,7 +226,7 @@ impl FromStr for Taquin {
                     .unwrap()
                     .trim() // can't fail
             })
-        .filter(|l| l != &"");
+            .filter(|l| l != &"");
 
         // get dimension
         let n: usize = lines.next().ok_or(ParseTaquinError::Empty)?.trim().parse()?;
@@ -274,6 +298,35 @@ impl From<ParseIntError> for ParseTaquinError {
     }
 }
 
+//pub struct Neighbours<'a> {
+//    taquin: Taquin,
+//    dir: Iter<'a, Dir>,
+//}
+//
+//impl<'a> Neighbours<'a> {
+//    pub fn new(taquin: Taquin) -> Self {
+//                                                                            
+//        Neighbours {
+//            taquin,
+//            dir: [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter(),
+//        }
+//    }
+//}
+//)
+//impl<'a> Iterator for Neighbours<'a> {
+//    type Item = (Taquin, u32);
+//    fn next(&mut self) -> Option<(Taquin, u32)> {
+//       let (taquin_next, dir) = loop {
+//            let dir = *self.dir.next()?;
+//            if let Some(t) = self.taquin.move_piece(dir) {
+//                break (t, dir);
+//            }
+//       };
+//       // to get the predecessor go to the oposite direction
+//       Some((taquin_next, 1))
+//    }
+//}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -307,8 +360,8 @@ mod test {
             Taquin::new(
                 3,
                 vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-                )
-            );
+            )
+        );
     }
     #[test]
     fn tabulations() {
@@ -322,8 +375,8 @@ mod test {
             Taquin::new(
                 3,
                 vec![5, 1, 0, 8, 4, 6, 3, 7, 2],
-                )
-            );
+            )
+        );
     }
     #[test]
     fn bad_integer() {
@@ -366,36 +419,36 @@ mod test {
             Taquin::new(
                 1,
                 vec![0],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(2),
             Taquin::new(
                 2,
                 vec![1,2,0,3],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(3),
             Taquin::new(
                 3,
                 vec![1,2,3,8,0,4,7,6,5],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(4),
             Taquin::new(
                 4,
                 vec![1,2,3,4,12,13,14,5,11,0,15,6,10,9,8,7],
-                )
-            );
+            )
+        );
         assert_eq!(
             Taquin::spiral(5),
             Taquin::new(
                 5,
                 vec![1,2,3,4,5,16,17,18,19,6,15,24,0,20,7,14,23,22,21,8,13,12,11,10,9],
-                )
-            );
+            )
+        );
     }
     #[test]
     fn move_piece() {
