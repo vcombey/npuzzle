@@ -9,7 +9,7 @@ lazy_static! {
     pub static ref static_spiral: Mutex<Taquin> = Mutex::new(Taquin::spiral(2));
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Dir {
     Right,
     Up,
@@ -26,9 +26,17 @@ impl Dir {
             Dir::Up => Dir::Down,
         }
     }
+    pub fn other(self) -> [Dir; 3] {
+        match self {
+            Dir::Right => [Dir::Left, Dir::Up, Dir::Down],
+            Dir::Down => [Dir::Left, Dir::Up, Dir::Right],
+            Dir::Left => [Dir::Down, Dir::Up, Dir::Right],
+            Dir::Up => [Dir::Left, Dir::Down, Dir::Right],
+        }
+    }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 pub struct Taquin {
     n: usize,
     pieces: Vec<u64>,
