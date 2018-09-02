@@ -19,12 +19,13 @@ impl Node {
     }
 }
 
-pub fn construct_pruning_trie() -> Trie {
+pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>) {
     let spiral = Taquin::spiral(7);
     let mut closed_set = HashSet::with_capacity(DEFAULT_CLOSED_SET_SIZE);
     let mut open_set = VecDeque::with_capacity(DEFAULT_OPEN_SET_SIZE);
     let init_node = Node::new(Vec::new(), spiral.clone());
     let mut trie = Trie::new();
+    let mut all_redundant_pahts = Vec::new();
 
     open_set.push_back(init_node);
     closed_set.insert(spiral);
@@ -41,11 +42,13 @@ pub fn construct_pruning_trie() -> Trie {
                     open_set.push_back(neighbour_node);
                     closed_set.insert(neighbour);
                 } else {
-                    println!("{:?}", neighbour_path);
+                    //println!("{:?}", neighbour_path);
+                    all_redundant_pahts.push(neighbour_path.clone());
                     trie.add_word(neighbour_path);
+                    //println!("tree: {:#?}", trie);
                 }
             }
         }
     }
-    trie
+    (trie, all_redundant_pahts)
 }
