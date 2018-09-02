@@ -42,8 +42,6 @@ impl Trie {
                 Redundant => panic!("subword redundant in add_word"),
             }
         }
-        //panic!("end of word")
-        //TODO: see
     }
     pub fn add_word(&mut self, word: Vec<Dir>) {
         self.add_word_aux(0, word.into_iter());
