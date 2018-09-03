@@ -7,7 +7,7 @@ use trie::Trie;
 
 const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
-const MAX_DEPTH: usize = 14;
+const MAX_DEPTH: usize = 1;
 
 #[derive(new, Copy, Clone, Debug, PartialEq, Eq)]
 struct MaxDir {
@@ -181,18 +181,18 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
                     open_set.push_back(neighbour_node.clone());
                     closed_set.insert(neighbour, vec![neighbour_node].into());
                 }
-                /*if !closed_set.contains_key(&neighbour) {
-                    primitive_paths.push(neighbour_node.path.clone());
-                    open_set.push_back(neighbour_node);
-                    closed_set.insert(neighbour);
-                }
-                else {
+                /*if closed_set.contains_key(&neighbour) {
                     //println!("{:?}", neighbour_path);
                     if trie.add_word(&neighbour_node.path) {
                         nb_duplicate += 1;
                     }
+                }
+                else {
                     all_redundant_paths.push(neighbour_node.path.clone());
                     //println!("tree: {:#?}", trie);
+                    primitive_paths.push(neighbour_node.path.clone());
+                    open_set.push_back(neighbour_node);
+                    closed_set.insert(neighbour);
                 }*/
             }
         }

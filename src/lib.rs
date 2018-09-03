@@ -12,3 +12,4 @@ extern crate num_traits;
 extern crate lazy_static;
 #[macro_use]
 extern crate derive_new;
+extern crate rand;

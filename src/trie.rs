@@ -109,6 +109,8 @@ impl<'a> Trie {
     }
 }
 
+use rand::prelude::*;
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -142,7 +144,7 @@ mod test {
             if trie.match_word(path.iter()) != Redundant {
                 non_matching+=1;
             }
-            //assert_eq!(trie.match_word(path.iter()), Redundant);
+            assert_eq!(trie.match_word(path.iter()), Redundant);
         }
         i = 0;
         for path in primitive_paths {
@@ -152,9 +154,28 @@ mod test {
             if trie.match_word(path.iter()) == Redundant {
                 non_matching+=1;
             }
-            //assert_ne!(trie.match_word(path.iter()), Redundant);
+            assert_ne!(trie.match_word(path.iter()), Redundant);
         }
         assert_eq!(non_matching, 0);
         println!("trie: {:#?}", trie.0.len());
+    }
+    #[test]
+    fn fuser() {
+
+        let mut trie = Trie::new();
+
+        let path = vec![Dir::Right, Dir::Right];
+        trie.add_word(&path);
+        let choices = [Dir::Up, Dir::Right, Dir::Left, Dir::Down];
+        let mut rng = thread_rng();
+        for i in 0..MAX_SIZE_TEST {
+            let v: Vec<Dir> = (0..(random::<usize>() % 14)).map(|_| *rng.choose(&choices).unwrap()).collect();
+            println!("{:?}", v);
+            if rng.gen() {
+
+
+            } else {
+            }
+        }
     }
 }
