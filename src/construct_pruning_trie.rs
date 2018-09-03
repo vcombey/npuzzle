@@ -5,7 +5,7 @@ use trie::Trie;
 
 const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
-const MAX_DEPTH: usize = 6;
+const MAX_DEPTH: usize = 14;
 
 #[derive(Clone, Debug, PartialEq)]
 struct Node {
@@ -19,16 +19,18 @@ impl Node {
     }
 }
 
-pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>) {
+pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
     let spiral = Taquin::spiral(7);
     let mut closed_set = HashSet::with_capacity(DEFAULT_CLOSED_SET_SIZE);
     let mut open_set = VecDeque::with_capacity(DEFAULT_OPEN_SET_SIZE);
     let init_node = Node::new(Vec::new(), spiral.clone());
     let mut trie = Trie::new();
-    let mut all_redundant_pahts = Vec::new();
+    let mut primitive_paths = Vec::new();
+    let mut all_redundant_paths = Vec::new();
 
     open_set.push_back(init_node);
     closed_set.insert(spiral);
+    let mut nb_duplicate = 0;
     while let Some(curr) = open_set.pop_front() {
         if curr.path.len() > MAX_DEPTH - 1 {
             break;
@@ -38,17 +40,21 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>) {
                 let mut neighbour_path = curr.path.clone();
                 neighbour_path.push(*d);
                 if !closed_set.contains(&neighbour) {
+                    primitive_paths.push(neighbour_path.clone());
                     let neighbour_node = Node::new(neighbour_path, neighbour.clone());
                     open_set.push_back(neighbour_node);
                     closed_set.insert(neighbour);
                 } else {
                     //println!("{:?}", neighbour_path);
-                    all_redundant_pahts.push(neighbour_path.clone());
-                    trie.add_word(neighbour_path);
+                    if trie.add_word(&neighbour_path) {
+                        nb_duplicate+=1;
+                    }
+                    all_redundant_paths.push(neighbour_path);
                     //println!("tree: {:#?}", trie);
                 }
             }
         }
     }
-    (trie, all_redundant_pahts)
+    println!("nb duplicate {}", nb_duplicate);
+    (trie, all_redundant_paths, primitive_paths)
 }

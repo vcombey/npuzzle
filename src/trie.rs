@@ -34,30 +34,40 @@ impl Trie {
     pub fn new() -> Self {
         Trie(vec![TrieNode([Failure(0); 4])])
     }
-    fn add_word_aux<I: Iterator<Item = Dir>>(&mut self, state: usize, mut word: I) {
-        if let Some(letter) = word.next() {
-            match self.0[state][letter] {
-                Match(next_state) => self.add_word_aux(next_state, word),
-                Failure(_) => self.new_down(state, letter, word),
-                Redundant => panic!("subword redundant in add_word"),
+    fn add_word_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize) {
+        if let Some(letter) = word.get(i) {
+            match self.0[state][*letter] {
+                Match(next_state) => self.add_word_aux(next_state, word, i + 1),
+                Failure(_) => self.new_down(state, *letter, word, i),
+                Redundant => {panic!("already redundant"); return;},
             }
         }
     }
-    pub fn add_word(&mut self, word: Vec<Dir>) {
-        self.add_word_aux(0, word.into_iter());
+    pub fn add_word(&mut self, word: &Vec<Dir>) -> bool {
+        if let Redundant = self.match_word(word.iter()) {
+            //println!("already redundant {:?}", word);
+            return false;
+        }
+        //println!("word {:?}", word);
+        self.add_word_aux(0, word, 0);
+        //println!("tree {:?}", self.0);
+        return true;
     }
-    fn new_down_aux(&mut self, state: usize, end_word: Vec<Dir>) {
-        for i in 1..end_word.len() {
+    fn new_down_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize) {
+        for j in i..word.len() {
             let mut new_node = TrieNode([Redundant; 4]);
-            let l = end_word[i];
-            new_node[l] = if i == end_word.len() {
-                Match(self.0.len() + 1)
-            } else {
+            let l = word[j];
+            new_node[l] = if j == word.len() - 1 {
                 Redundant
+            } else {
+                Match(self.0.len() + 1)
             };
             //println!("tree {:?}",  self.0);
             for o in l.other().into_iter() {
-                new_node[*o] = match self.match_word(end_word[1..i].iter().chain([*o].iter())) {
+                /*for k in 1..j {
+                    self.match_word(word[1..j].iter().chain([*o].iter()))
+                }*/
+                new_node[*o] = match self.match_word(word[1..j].iter().chain([*o].iter())) {
                     Redundant => Redundant,
                     Match(state) => Failure(state),
                     Failure(_) => unimplemented!(),
@@ -68,11 +78,13 @@ impl Trie {
             //println!("tree {:?}", self.0);
         }
     }
-    fn new_down<I: Iterator<Item = Dir>>(&mut self, state: usize, curr_letter: Dir, rest: I) {
-        self.0[state][curr_letter] = Match(self.0.len());
-        let mut end_word: Vec<Dir> = vec![curr_letter];
-        end_word.extend(rest);
-        self.new_down_aux(state, end_word);
+    fn new_down(&mut self, state: usize, curr_letter: Dir, word: &Vec<Dir>, i: usize) {
+        self.0[state][curr_letter] = if i == word.len() - 1 {
+            Redundant
+        } else {
+            Match(self.0.len())
+        };
+        self.new_down_aux(state, word, i + 1);
     }
     pub fn change_state(&self, old_state: usize, dir: Dir) -> TrieType {
         self.0[old_state][dir]
@@ -107,7 +119,7 @@ mod test {
         println!("trie: {:?}", trie);
 
         let path = vec![Dir::Right, Dir::Right];
-        trie.add_word(path.clone());
+        trie.add_word(&path);
         println!("trie: {:?}", trie);
         assert_eq!(trie.match_word(path.iter()), Redundant);
         assert_ne!(
@@ -117,11 +129,24 @@ mod test {
     }
     #[test]
     fn test_all_redundant_path() {
-        let (trie, all_redundant_pahts) = construct_pruning_trie();
+        let (trie, all_redundant_pahts, primitive_paths) = construct_pruning_trie();
         println!("trie: {:#?}", trie);
+        println!("len: {:#?}", all_redundant_pahts.len());
+
+        let mut i:usize = 0;
         for path in all_redundant_pahts {
+            i+=1;
+            println!("i: {}", i);
             println!("path: {:?}", path);
             assert_eq!(trie.match_word(path.iter()), Redundant);
         }
+        i = 0;
+        for path in primitive_paths {
+            i+=1;
+            println!("i: {}", i);
+            println!("path: {:?}", path);
+            assert_ne!(trie.match_word(path.iter()), Redundant);
+        }
+        println!("trie: {:#?}", trie.0.len());
     }
 }
