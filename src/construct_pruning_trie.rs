@@ -106,8 +106,8 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
             if let Some(neighbour) = curr.taquin.move_piece(*d) {
                 let neighbour_node = Node::from_curr(&curr, *d, neighbour.clone());
 
-                if let Some(bheap) = closed_set.get_mut(&neighbour) {
-                    bheap.push(neighbour_node);
+                if closed_set.contains_key(&neighbour) {
+                    closed_set.get_mut(&neighbour).unwrap().push(neighbour_node);
                 } else {
                     open_set.push_back(neighbour_node.clone());
                     closed_set.insert(neighbour, vec![neighbour_node].into());
@@ -126,6 +126,11 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
                     //println!("tree: {:#?}", trie);
                 }*/
             }
+        }
+    }
+    for (t, c) in &closed_set {
+        if c.len() > 1 {
+            nb_duplicate+=1;
         }
     }
     println!("nb duplicate {}", nb_duplicate);
