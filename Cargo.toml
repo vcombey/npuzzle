@@ -6,3 +6,4 @@ authors = ["vcombey <vcombey@student.42.fr>"]
 [dependencies]
 lazy_static = "1.1.0"
 num-traits = "0.2.5"
+derive-new = "0.5.5"
