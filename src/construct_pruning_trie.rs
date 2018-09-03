@@ -9,17 +9,15 @@ const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
 const MAX_DEPTH: usize = 14;
 
-#[derive(new, Clone, Debug, PartialEq, Eq)]
-struct Node {
-    path: Vec<Dir>,
-    taquin: Taquin,
-    max_in_dir: [u32; 4],
-    curr_right_left: i32,
-    curr_up_down: i32,
+#[derive(new, Copy, Clone, Debug, PartialEq, Eq)]
+struct MaxDir {
+    pub max_in_dir: [u32; 4],
+    pub curr_right_left: i32,
+    pub curr_up_down: i32,
 }
 
-impl Ord for Node {
-    fn cmp(&self, other: &Node) -> Ordering {
+impl Ord for MaxDir {
+    fn cmp(&self, other: &MaxDir) -> Ordering {
         if self
             .max_in_dir
             .iter()
@@ -32,8 +30,8 @@ impl Ord for Node {
     }
 }
 
-impl PartialOrd for Node {
-    fn partial_cmp(&self, other: &Node) -> Option<Ordering> {
+impl PartialOrd for MaxDir {
+    fn partial_cmp(&self, other: &MaxDir) -> Option<Ordering> {
         if self
             .max_in_dir
             .iter()
@@ -53,7 +51,7 @@ impl PartialOrd for Node {
     }
 }
 
-impl Node {
+impl MaxDir {
     fn update_max_in_dir(&mut self) {
         if self.curr_right_left > 0
             && self.curr_right_left as u32 > self.max_in_dir[Dir::Right as usize]
@@ -73,22 +71,85 @@ impl Node {
             self.max_in_dir[Dir::Down as usize] = self.curr_up_down.abs() as u32;
         }
     }
+    pub fn update_curr_dir(&mut self, dir: Dir) {
+        match dir {
+            Dir::Right => self.curr_right_left += 1,
+            Dir::Left => self.curr_right_left -= 1,
+            Dir::Up => self.curr_up_down += 1,
+            Dir::Down => self.curr_up_down -= 1,
+        }
+        self.update_max_in_dir();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_max_dir() {
+        let mut m = MaxDir::new([0; 4], 0, 0);
+        m.update_curr_dir(Dir::Right);
+        m.update_curr_dir(Dir::Right);
+        m.update_curr_dir(Dir::Left);
+        m.update_curr_dir(Dir::Left);
+        m.update_curr_dir(Dir::Left);
+        assert_eq!(m.curr_right_left, -1);
+        m.update_curr_dir(Dir::Up);
+        m.update_curr_dir(Dir::Up);
+        m.update_curr_dir(Dir::Down);
+        m.update_curr_dir(Dir::Down);
+        m.update_curr_dir(Dir::Down);
+        assert_eq!(m.curr_up_down, -1);
+    }
+    #[test]
+    fn test_partial_cmp_max_dir() {
+        let mut m = MaxDir::new([0; 4], 0, 0);
+        m.update_curr_dir(Dir::Up);
+        m.update_curr_dir(Dir::Right);
+        m.update_curr_dir(Dir::Right);
+        m.update_curr_dir(Dir::Up);
+        m.update_curr_dir(Dir::Left);
+        m.update_curr_dir(Dir::Left);
+        m.update_curr_dir(Dir::Left);
+        m.update_curr_dir(Dir::Up);
+        m.update_curr_dir(Dir::Down);
+        let mut res: [u32; 4] = [0; 4];
+        res[Dir::Right as usize] = 2;
+        res[Dir::Left as usize] = 1;
+        res[Dir::Down as usize] = 0;
+        res[Dir::Up as usize] = 3;
+        assert_eq!(m.max_in_dir, res);
+    }
+}
+
+#[derive(new, Clone, Debug, PartialEq, Eq)]
+struct Node {
+    path: Vec<Dir>,
+    taquin: Taquin,
+    max_dir: MaxDir,
+}
+
+impl Ord for Node {
+    fn cmp(&self, other: &Node) -> Ordering {
+        self.max_dir.cmp(&other.max_dir)
+    }
+}
+
+impl PartialOrd for Node {
+    fn partial_cmp(&self, other: &Node) -> Option<Ordering> {
+        self.max_dir.partial_cmp(&other.max_dir)
+    }
+}
+
+impl Node {
     pub fn from_curr(curr: &Self, dir: Dir, taquin: Taquin) -> Self {
         let mut new = Node {
             path: curr.path.clone(),
             taquin: taquin,
-            max_in_dir: curr.max_in_dir,
-            curr_right_left: curr.curr_right_left,
-            curr_up_down: curr.curr_up_down,
+            max_dir: curr.max_dir,
         };
         new.path.push(dir);
-        match dir {
-            Dir::Right => new.curr_right_left += 1,
-            Dir::Left => new.curr_right_left -= 1,
-            Dir::Up => new.curr_up_down += 1,
-            Dir::Down => new.curr_up_down -= 1,
-        }
-        new.update_max_in_dir();
+        new.max_dir.update_curr_dir(dir);
         new
     }
 }
@@ -98,7 +159,7 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
     let mut closed_set: HashMap<Taquin, BinaryHeap<Node>> =
         HashMap::with_capacity(DEFAULT_CLOSED_SET_SIZE);
     let mut open_set = VecDeque::with_capacity(DEFAULT_OPEN_SET_SIZE);
-    let init_node = Node::new(Vec::new(), spiral.clone(), [0; 4], 0, 0);
+    let init_node = Node::new(Vec::new(), spiral.clone(), MaxDir::new([0; 4], 0, 0));
     let mut trie = Trie::new();
     let mut primitive_paths = Vec::new();
     let mut redundant_paths = Vec::new();
