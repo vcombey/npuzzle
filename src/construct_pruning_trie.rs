@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::collections::BinaryHeap;
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use taquin::{Dir, Taquin};
 use trie::Trie;
@@ -38,11 +38,18 @@ impl PartialOrd for Node {
             .max_in_dir
             .iter()
             .zip(other.max_in_dir.iter())
-            .all(|(a, b)| a < b)
+            .all(|(a, b)| a <= b)
         {
             return Some(Ordering::Greater);
+        } else if self
+            .max_in_dir
+            .iter()
+            .zip(other.max_in_dir.iter())
+            .all(|(a, b)| b <= a)
+        {
+            return Some(Ordering::Less);
         }
-        return Some(Ordering::Less);
+        return None;
     }
 }
 
@@ -88,12 +95,13 @@ impl Node {
 
 pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
     let spiral = Taquin::spiral(7);
-    let mut closed_set: HashMap<Taquin, BinaryHeap<Node>> = HashMap::with_capacity(DEFAULT_CLOSED_SET_SIZE);
+    let mut closed_set: HashMap<Taquin, BinaryHeap<Node>> =
+        HashMap::with_capacity(DEFAULT_CLOSED_SET_SIZE);
     let mut open_set = VecDeque::with_capacity(DEFAULT_OPEN_SET_SIZE);
     let init_node = Node::new(Vec::new(), spiral.clone(), [0; 4], 0, 0);
     let mut trie = Trie::new();
     let mut primitive_paths = Vec::new();
-    let mut all_redundant_paths = Vec::new();
+    let mut redundant_paths = Vec::new();
 
     open_set.push_back(init_node.clone());
     closed_set.insert(spiral, vec![init_node].into());
@@ -128,11 +136,18 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
             }
         }
     }
-    for (t, c) in &closed_set {
-        if c.len() > 1 {
-            nb_duplicate+=1;
+    let mut v: Vec<BinaryHeap<Node>> = closed_set.into_iter().map(|(t, c)| c).collect();
+    v.sort_unstable_by_key(|b| b.peek().unwrap().path.len());
+    for mut e in v {
+        let primitive = e.pop().unwrap();
+        for redundant in e {
+            if redundant.partial_cmp(&primitive).is_some() && trie.add_word(&redundant.path) {
+                nb_duplicate += 1;
+            }
+            redundant_paths.push(redundant.path);
         }
+        primitive_paths.push(primitive.path);
     }
     println!("nb duplicate {}", nb_duplicate);
-    (trie, all_redundant_paths, primitive_paths)
+    (trie, redundant_paths, primitive_paths)
 }
