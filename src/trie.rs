@@ -134,19 +134,27 @@ mod test {
         println!("len: {:#?}", all_redundant_pahts.len());
 
         let mut i:usize = 0;
+        let mut non_matching = 0;
         for path in all_redundant_pahts {
             i+=1;
             println!("i: {}", i);
             println!("path: {:?}", path);
-            assert_eq!(trie.match_word(path.iter()), Redundant);
+            if trie.match_word(path.iter()) != Redundant {
+                non_matching+=1;
+            }
+            //assert_eq!(trie.match_word(path.iter()), Redundant);
         }
         i = 0;
         for path in primitive_paths {
             i+=1;
             println!("i: {}", i);
             println!("path: {:?}", path);
-            assert_ne!(trie.match_word(path.iter()), Redundant);
+            if trie.match_word(path.iter()) == Redundant {
+                non_matching+=1;
+            }
+            //assert_ne!(trie.match_word(path.iter()), Redundant);
         }
+        assert_eq!(non_matching, 0);
         println!("trie: {:#?}", trie.0.len());
     }
 }

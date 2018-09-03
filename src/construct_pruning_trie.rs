@@ -2,16 +2,37 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 use taquin::{Dir, Taquin};
 use trie::Trie;
+use std::cmp::Ordering;
 
 const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
 const MAX_DEPTH: usize = 14;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct Node {
     path: Vec<Dir>,
     taquin: Taquin,
+    //max_in_dir: [u32; 4],
+    //current_in_dir: [u32; 4],
 }
+
+//impl Ord for Node {
+//    fn cmp(&self, other: &Node) -> Ordering {
+//        if self.max_in_dir.iter().zip(other.max_in_dir.iter()).all(|(a, b)| a < b) {
+//            return Ordering::Greater;
+//        }
+//        return Ordering::Less;
+//    }
+//}
+//
+//impl PartialOrd for Node {
+//    fn partial_cmp(&self, other: &Node) -> Option<Ordering> {
+//        if self.max_in_dir.iter().zip(other.max_in_dir.iter()).all(|(a, b)| a < b) {
+//            return Some(Ordering::Greater);
+//        }
+//        return Some(Ordering::Less);
+//    }
+//}
 
 impl Node {
     pub fn new(path: Vec<Dir>, taquin: Taquin) -> Self {
