@@ -9,7 +9,7 @@ lazy_static! {
     pub static ref static_spiral: Mutex<Taquin> = Mutex::new(Taquin::spiral(2));
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Hash, Clone, Debug, PartialEq, Eq)]
 pub enum Dir {
     Right,
     Up,

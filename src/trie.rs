@@ -159,23 +159,35 @@ mod test {
         assert_eq!(non_matching, 0);
         println!("trie: {:#?}", trie.0.len());
     }
+    use std::collections::HashSet;
+    const MAX_SIZE_TEST: usize = 100000;
     #[test]
     fn fuser() {
 
         let mut trie = Trie::new();
-
-        let path = vec![Dir::Right, Dir::Right];
-        trie.add_word(&path);
         let choices = [Dir::Up, Dir::Right, Dir::Left, Dir::Down];
         let mut rng = thread_rng();
+        let mut redundant = HashSet::new();
+        let mut primitive = HashSet::new();
         for i in 0..MAX_SIZE_TEST {
-            let v: Vec<Dir> = (0..(random::<usize>() % 14)).map(|_| *rng.choose(&choices).unwrap()).collect();
+            let v: Vec<Dir> = (0..(random::<usize>() % 14) + 4).map(|_| *rng.choose(&choices).unwrap()).collect();
             println!("{:?}", v);
-            if rng.gen() {
-
-
-            } else {
+            if !redundant.contains(&v) {
+                if trie.match_word(v.iter()) != Redundant {
+                    primitive.insert(v);
+                }
             }
+
+            else if !primitive.contains(&v) && rng.gen() {
+                trie.add_word(&v);
+                redundant.insert(v);
+            }
+        }
+        for r in redundant {
+            assert_eq!(trie.match_word(r.iter()), Redundant);
+        }
+        for r in primitive {
+            assert_ne!(trie.match_word(r.iter()), Redundant);
         }
     }
 }
