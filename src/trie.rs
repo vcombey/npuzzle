@@ -44,23 +44,35 @@ impl Trie {
     pub fn all_redundant(&self, state: usize) -> bool {
         self.0[state].0.iter().all(|x| *x == Redundant)
     }
+    fn greatest_match(&self, path: &[Dir]) -> TrieType {
+        for j in 0..path.len() {
+            match self.match_word_no_failure(path[j..].iter()) {
+                Failure(_) => {continue;},
+                Match(s) => {return Failure(s)},
+                Redundant => {return Redundant;}
+            }
+        }
+        Failure(0)
+    }
     fn update_failure_aux(&mut self, state: usize, path: &mut Vec<Dir>) {
-       // for (i, t) in self.0[state].0.clone().iter().enumerate() {
-       //     path.push(Dir::from(i));
-       //     match t {
-       //         Match(new_state) => self.update_failure_aux(state),
-       //         Failure
-       //     }
-       //     ;
-       //     path.pop();
-       // }
+        for (i, t) in self.0[state].0.clone().iter().enumerate() {
+            path.push(Dir::from(i));
+            self.0[state].0[i] = match t {
+                Match(new_state) => {
+                    self.update_failure_aux(*new_state, path);
+                    Match(*new_state)
+                },
+                Failure(_) => {
+                    self.greatest_match(&path[1..])
+                },
+                Redundant => Redundant,
+            };
+            path.pop();
+        }
     }
     pub fn update_failure(&mut self) {
-        //new_node[*o] = match self.match_word(word[1..j].iter().chain([*o].iter())) {
-        //    Redundant => Redundant,
-        //    Match(state) => Failure(state),
-        //    Failure(_) => unimplemented!(),
-        //};
+        let mut path = Vec::new();
+        self.update_failure_aux(0, &mut path);
     }
     fn add_word_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize, debug: bool) {
         if let Some(letter) = word.get(i) {
@@ -83,12 +95,12 @@ impl Trie {
         }
     }
     pub fn add_word(&mut self, word: &Vec<Dir>, debug: bool) -> bool {
-        /*if let Redundant = self.match_word(word.iter()) {
-            if debug {
-                println!("already redundant");
-            }
-            return false;
-        }*/
+        if let Redundant = self.greatest_match(word) {
+        if debug {
+        println!("already redundant");
+    }
+        return false;
+    }
         self.add_word_aux(0, word, 0, debug);
         return true;
     }
@@ -103,20 +115,13 @@ impl Trie {
         self.0[state][curr_letter] = Match(self.0.len());
 
         for j in i+1..word.len() {
-            let mut new_node = TrieNode([Redundant; 4]);
+            let mut new_node = TrieNode([Failure(0); 4]);
             let l = word[j];
             new_node[l] = if j == word.len() - 1 {
                 Redundant
             } else {
                 Match(self.0.len() + 1)
             };
-            for o in l.other().into_iter() {
-                new_node[*o] = match self.match_word(word[1..j].iter().chain([*o].iter())) {
-                    Redundant => Redundant,
-                    Match(state) => Failure(state),
-                    Failure(_) => unimplemented!(),
-                };
-            }
             self.0.push(new_node);
         }
         if debug {
@@ -141,8 +146,23 @@ impl<'a> Trie {
             };
         }
         //if state < self.0.len() && self.all_redundant(state) {
-         //   return Redundant;
+        //   return Redundant;
         //}
+        Match(state)
+    }
+    pub fn match_word_no_failure<I: Iterator<Item = &'a Dir>>(&self, mut word: I) -> TrieType {
+        let mut state = 0;
+        for d in word {
+            state = match self.change_state(state, *d) {
+                Redundant => {
+                    return Redundant;
+                },
+                Failure(new_state) => {
+                    return Failure(new_state)
+                },
+                Match(new_state) => new_state,
+            };
+        }
         Match(state)
     }
     pub fn match_word_debug<I: Iterator<Item = &'a Dir>>(&self, mut word: I) -> TrieType {
@@ -200,7 +220,7 @@ mod test {
             println!("path: {:?}", path);
             
             if trie.match_word((0..random::<usize>() % 10)
-                .map(|_| rng.choose(&choices).unwrap()).chain(path.iter())) != Redundant {
+                               .map(|_| rng.choose(&choices).unwrap()).chain(path.iter())) != Redundant {
                 non_matching += 1;
                 redundant_not_found.push(path);
             }
@@ -241,10 +261,25 @@ mod test {
         trie.add_word(&v2, false);
         trie.add_word(&v3, false);
         trie.add_word(&v4, false);
+        trie.update_failure();
         assert_eq!(trie.match_word(v1.iter()), Redundant);
         assert_eq!(trie.match_word(v2.iter()), Redundant);
         assert_eq!(trie.match_word(v3.iter()), Redundant);
         assert_eq!(trie.match_word(v4.iter()), Redundant);
+    }
+    #[test]
+    fn test_suffix() {
+        let mut trie = Trie::new();
+        let v1 = vec![Right, Up, Left, Down, Right];
+        
+        let v2 = vec![Up, Left, Down];
+        trie.add_word(&v1, false);
+        println!("trie: {:#?}", trie);
+        trie.add_word(&v2, false);
+        println!("trie: {:#?}", trie);
+        trie.update_failure();
+        println!("trie: {:#?}", trie);
+        assert_eq!(trie.match_word([Right, Up, Left, Down].iter()), Redundant);
     }
     #[test]
     fn big_and_substring() {

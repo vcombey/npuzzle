@@ -258,7 +258,7 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
                     println!("\redundant {:?}", neighbour_node.path);
 
                     trie.add_word(&neighbour_node.path, true);
-                    debug_assert!(trie.match_word(neighbour_node.path.iter()) == TrieType::Redundant);
+                //    debug_assert!(trie.match_word(neighbour_node.path.iter()) == TrieType::Redundant);
                    
                     redundant_paths.push(neighbour_node.path);
 
@@ -292,5 +292,6 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
     }
     println!("nb duplicate {}", nb_duplicate);
     */
+    trie.update_failure();
     (trie, redundant_paths, primitive_paths)
 }
