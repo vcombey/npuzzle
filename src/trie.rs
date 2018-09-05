@@ -44,7 +44,7 @@ impl Trie {
     pub fn all_redundant(&self, state: usize) -> bool {
         self.0[state].0.iter().all(|x| *x == Redundant)
     }
-    fn add_word_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize) {
+    fn add_word_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize, debug: bool) {
         if let Some(letter) = word.get(i) {
             match self.0[state][*letter] {
                 Match(next_state) => {
@@ -53,26 +53,38 @@ impl Trie {
                         panic!("subword of a redundant");
                     }
                     else {
-                        self.add_word_aux(next_state, word, i + 1)
+                        self.add_word_aux(next_state, word, i + 1, debug)
                     }
                 }
-                Failure(_) => self.new_down(state, *letter, word, i),
+                Failure(_) => self.new_down(state, *letter, word, i, debug),
                 Redundant => {
-                    panic!("already redundant");
+                    //panic!("already redundant");
                     return;
                 }
             }
         }
     }
-    pub fn add_word(&mut self, word: &Vec<Dir>) -> bool {
-        if let Redundant = self.match_word(word.iter()) {
+    pub fn add_word(&mut self, word: &Vec<Dir>, debug: bool) -> bool {
+        /*if let Redundant = self.match_word(word.iter()) {
+            if debug {
+                println!("already redundant");
+            }
             return false;
-        }
-        self.add_word_aux(0, word, 0);
+        }*/
+        self.add_word_aux(0, word, 0, debug);
         return true;
     }
-    fn new_down_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize) {
-        for j in i..word.len() {
+    fn new_down(&mut self, state: usize, curr_letter: Dir, word: &Vec<Dir>, i: usize, debug: bool) {
+        if i == word.len() - 1 {
+            self.0[state][curr_letter] = Redundant;
+            if debug {
+                println!("last letter, {:?}", self.0[state]);
+            }
+            return ;
+        }
+        self.0[state][curr_letter] = Match(self.0.len());
+
+        for j in i+1..word.len() {
             let mut new_node = TrieNode([Redundant; 4]);
             let l = word[j];
             new_node[l] = if j == word.len() - 1 {
@@ -89,14 +101,9 @@ impl Trie {
             }
             self.0.push(new_node);
         }
-    }
-    fn new_down(&mut self, state: usize, curr_letter: Dir, word: &Vec<Dir>, i: usize) {
-        if i == word.len() - 1 {
-            self.0[state][curr_letter] = Redundant;
-            return ;
+        if debug {
+            println!("{:?}", self.0.last());
         }
-        self.0[state][curr_letter] = Match(self.0.len());
-        self.new_down_aux(state, word, i + 1);
     }
     pub fn change_state(&self, old_state: usize, dir: Dir) -> TrieType {
         self.0[old_state][dir]
@@ -115,8 +122,22 @@ impl<'a> Trie {
                 Match(new_state) => new_state,
             };
         }
-        if state < self.0.len() && self.all_redundant(state) {
-            return Redundant;
+        //if state < self.0.len() && self.all_redundant(state) {
+         //   return Redundant;
+        //}
+        Match(state)
+    }
+    pub fn match_word_debug<I: Iterator<Item = &'a Dir>>(&self, mut word: I) -> TrieType {
+        let mut state = 0;
+        for d in word {
+            state = match self.change_state(state, *d) {
+                Redundant => {
+                    return Redundant;
+                }
+                Failure(new_state) => {println!("failure");new_state },
+                Match(new_state) => new_state,
+            };
+            println!("{:?} state {:?}", d, self.0[state]);
         }
         Match(state)
     }
@@ -134,7 +155,7 @@ mod test {
         println!("trie: {:?}", trie);
 
         let path = vec![Dir::Right, Dir::Right];
-        trie.add_word(&path);
+        trie.add_word(&path, false);
         println!("trie: {:?}", trie);
         assert_eq!(trie.match_word(path.iter()), Redundant);
         assert_ne!(
@@ -148,6 +169,8 @@ mod test {
         //trie.check_integrity();
         //    println!("trie: {:#?}", trie);
         println!("len: {:#?}", all_redundant_pahts.len());
+        let mut primitive_not_found = Vec::new();
+        let mut redundant_not_found = Vec::new();
 
         let mut i: usize = 0;
         let mut non_matching = 0;
@@ -157,8 +180,9 @@ mod test {
             println!("path: {:?}", path);
             if trie.match_word(path.iter()) != Redundant {
                 non_matching += 1;
+                redundant_not_found.push(path);
             }
-            assert_eq!(trie.match_word(path.iter()), Redundant);
+            //assert_eq!(trie.match_word(path.iter()), Redundant);
         }
         i = 0;
         for path in primitive_paths {
@@ -167,11 +191,21 @@ mod test {
             println!("path: {:?}", path);
             if trie.match_word(path.iter()) == Redundant {
                 non_matching += 1;
+                primitive_not_found.push(path);
             }
-            assert_ne!(trie.match_word(path.iter()), Redundant);
+            //kassert_ne!(trie.match_word(path.iter()), Redundant);
         }
-        assert_eq!(non_matching, 0);
+        println!("redundant not found");
+        for r in redundant_not_found {
+            println!("r: {:?}", r);
+        }
+        println!("primitive not found");
+        for r in primitive_not_found {
+            println!("r: {:?}", r);
+        }
         println!("trie: {:#?}", trie.0.len());
+        trie.match_word_debug([Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Left].iter());
+        assert_eq!(non_matching, 0);
     }
     use self::Dir::*;
     #[test]
@@ -181,10 +215,10 @@ mod test {
         let v2 = vec![Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Up];
         let v3 = vec! [Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Down];
         let v4 = vec! [Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Left];
-        trie.add_word(&v1);
-        trie.add_word(&v2);
-        trie.add_word(&v3);
-        trie.add_word(&v4);
+        trie.add_word(&v1, false);
+        trie.add_word(&v2, false);
+        trie.add_word(&v3, false);
+        trie.add_word(&v4, false);
         assert_eq!(trie.match_word(v1.iter()), Redundant);
         assert_eq!(trie.match_word(v2.iter()), Redundant);
         assert_eq!(trie.match_word(v3.iter()), Redundant);
@@ -195,8 +229,8 @@ mod test {
         let mut trie = Trie::new();
         let big = vec![Dir::Up, Dir::Right, Dir::Left, Dir::Down, Dir::Up];
         let sub_big = vec![Dir::Up, Dir::Right, Dir::Left, Dir::Down];
-        trie.add_word(&big);
-        trie.add_word(&sub_big);
+        trie.add_word(&big, false);
+        trie.add_word(&sub_big, false);
         assert_eq!(trie.match_word(big.iter()), Redundant);
         assert_eq!(trie.match_word(sub_big.iter()), Redundant);
     }
@@ -219,7 +253,7 @@ mod test {
                     primitive.insert(v);
                 }
             } else if !primitive.contains(&v) && rng.gen() {
-                trie.add_word(&v);
+                trie.add_word(&v, false);
                 redundant.insert(v);
             }
         }

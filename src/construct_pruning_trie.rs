@@ -1,10 +1,9 @@
 use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+//use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use taquin::{Dir, Taquin};
-use trie::Trie;
-use trie::TrieType;
+use trie::{Trie, TrieType};
 
 const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
@@ -254,10 +253,13 @@ pub fn construct_pruning_trie() -> (Trie, Vec<Vec<Dir>>, Vec<Vec<Dir>>) {
             if let Some(neighbour) = curr.taquin.move_piece(*d) {
                 let neighbour_node = Node::from_curr(&curr, *d, neighbour.clone());
                 if closed_set.contains_key(&neighbour) {
+
                     closed_set.get_mut(&neighbour).unwrap().push(neighbour_node.clone());
                     println!("\redundant {:?}", neighbour_node.path);
 
-                    trie.add_word(&neighbour_node.path);
+                    trie.add_word(&neighbour_node.path, true);
+                    debug_assert!(trie.match_word(neighbour_node.path.iter()) == TrieType::Redundant);
+                   
                     redundant_paths.push(neighbour_node.path);
 
                 } else {
