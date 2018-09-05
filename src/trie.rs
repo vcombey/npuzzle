@@ -44,6 +44,24 @@ impl Trie {
     pub fn all_redundant(&self, state: usize) -> bool {
         self.0[state].0.iter().all(|x| *x == Redundant)
     }
+    fn update_failure_aux(&mut self, state: usize, path: &mut Vec<Dir>) {
+       // for (i, t) in self.0[state].0.clone().iter().enumerate() {
+       //     path.push(Dir::from(i));
+       //     match t {
+       //         Match(new_state) => self.update_failure_aux(state),
+       //         Failure
+       //     }
+       //     ;
+       //     path.pop();
+       // }
+    }
+    pub fn update_failure(&mut self) {
+        //new_node[*o] = match self.match_word(word[1..j].iter().chain([*o].iter())) {
+        //    Redundant => Redundant,
+        //    Match(state) => Failure(state),
+        //    Failure(_) => unimplemented!(),
+        //};
+    }
     fn add_word_aux(&mut self, state: usize, word: &Vec<Dir>, i: usize, debug: bool) {
         if let Some(letter) = word.get(i) {
             match self.0[state][*letter] {
@@ -174,11 +192,15 @@ mod test {
 
         let mut i: usize = 0;
         let mut non_matching = 0;
+        let choices = [Dir::Up, Dir::Right, Dir::Left, Dir::Down];
+        let mut rng = thread_rng();
         for path in all_redundant_pahts {
             i += 1;
             println!("i: {}", i);
             println!("path: {:?}", path);
-            if trie.match_word(path.iter()) != Redundant {
+            
+            if trie.match_word((0..random::<usize>() % 10)
+                .map(|_| rng.choose(&choices).unwrap()).chain(path.iter())) != Redundant {
                 non_matching += 1;
                 redundant_not_found.push(path);
             }

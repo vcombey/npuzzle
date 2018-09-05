@@ -36,6 +36,18 @@ impl Dir {
     }
 }
 
+impl From<usize> for Dir {
+    fn from(u: usize) -> Dir {
+        match u {
+            0 => Dir::Right,
+            1 => Dir::Up,
+            2 => Dir::Down,
+            3 => Dir::Left,
+            _ => panic!("usize out of dir range"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct Taquin {
     n: usize,
