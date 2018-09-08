@@ -72,15 +72,15 @@ impl Taquin {
         Taquin { n, pieces, cur_pos }
     }
 
-    pub fn sorted_neighbours<'a>(&self) -> ::std::vec::IntoIter<Taquin> {
+    pub fn sorted_neighbours<'a>(&self) -> Vec<Dir> {
         let mut v = Vec::with_capacity(4);
         for dir in [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter() {
             if let Some(t) = self.move_piece(*dir) {
-                v.push(t);
+                v.push((t, *dir));
             }
         }
-        v.sort_by_key(|k| k.manhattan_heuristic());
-        v.into_iter()
+        v.sort_by_key(|(k, dir)| k.manhattan_heuristic());
+        v.into_iter().map(|(t, dir)| dir).collect()
         //Neighbours::new(self.clone())
     }
 

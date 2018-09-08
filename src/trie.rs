@@ -3,7 +3,7 @@ use std::ops::IndexMut;
 use std::slice::Iter;
 use taquin::Dir;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrieNode([TrieType; 4]);
 
 impl Index<Dir> for TrieNode {
@@ -19,7 +19,7 @@ impl IndexMut<Dir> for TrieNode {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TrieType {
     Redundant,
     Failure(usize),
@@ -27,8 +27,8 @@ pub enum TrieType {
 }
 use self::TrieType::*;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Trie(Vec<TrieNode>);
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Trie(pub Vec<TrieNode>);
 
 impl Trie {
     pub fn new() -> Self {
@@ -47,9 +47,13 @@ impl Trie {
     fn greatest_match(&self, path: &[Dir]) -> TrieType {
         for j in 0..path.len() {
             match self.match_word_no_failure(path[j..].iter()) {
-                Failure(_) => {continue;},
-                Match(s) => {return Failure(s)},
-                Redundant => {return Redundant;}
+                Failure(_) => {
+                    continue;
+                }
+                Match(s) => return Failure(s),
+                Redundant => {
+                    return Redundant;
+                }
             }
         }
         Failure(0)
@@ -61,10 +65,8 @@ impl Trie {
                 Match(new_state) => {
                     self.update_failure_aux(*new_state, path);
                     Match(*new_state)
-                },
-                Failure(_) => {
-                    self.greatest_match(&path[1..])
-                },
+                }
+                Failure(_) => self.greatest_match(&path[1..]),
                 Redundant => Redundant,
             };
             path.pop();
@@ -81,8 +83,7 @@ impl Trie {
                     if i == word.len() - 1 {
                         self.0[state][*letter] = Redundant;
                         panic!("subword of a redundant");
-                    }
-                    else {
+                    } else {
                         self.add_word_aux(next_state, word, i + 1, debug)
                     }
                 }
@@ -96,11 +97,11 @@ impl Trie {
     }
     pub fn add_word(&mut self, word: &Vec<Dir>, debug: bool) -> bool {
         if let Redundant = self.greatest_match(word) {
-        if debug {
-        println!("already redundant");
-    }
-        return false;
-    }
+            if debug {
+                println!("already redundant");
+            }
+            return false;
+        }
         self.add_word_aux(0, word, 0, debug);
         return true;
     }
@@ -110,11 +111,11 @@ impl Trie {
             if debug {
                 println!("last letter, {:?}", self.0[state]);
             }
-            return ;
+            return;
         }
         self.0[state][curr_letter] = Match(self.0.len());
 
-        for j in i+1..word.len() {
+        for j in i + 1..word.len() {
             let mut new_node = TrieNode([Failure(0); 4]);
             let l = word[j];
             new_node[l] = if j == word.len() - 1 {
@@ -128,8 +129,14 @@ impl Trie {
             println!("{:?}", self.0.last());
         }
     }
-    pub fn change_state(&self, old_state: usize, dir: Dir) -> TrieType {
+    fn change_state(&self, old_state: usize, dir: Dir) -> TrieType {
         self.0[old_state][dir]
+    }
+    pub fn change_true_state(&self, old_state: &TrieType, dir: Dir) -> TrieType {
+        match old_state {
+            Redundant => Redundant,
+            Failure(s) | Match(s) => self.0[*s][dir],
+        }
     }
 }
 
@@ -156,26 +163,10 @@ impl<'a> Trie {
             state = match self.change_state(state, *d) {
                 Redundant => {
                     return Redundant;
-                },
-                Failure(new_state) => {
-                    return Failure(new_state)
-                },
-                Match(new_state) => new_state,
-            };
-        }
-        Match(state)
-    }
-    pub fn match_word_debug<I: Iterator<Item = &'a Dir>>(&self, mut word: I) -> TrieType {
-        let mut state = 0;
-        for d in word {
-            state = match self.change_state(state, *d) {
-                Redundant => {
-                    return Redundant;
                 }
-                Failure(new_state) => {println!("failure");new_state },
+                Failure(new_state) => return Failure(new_state),
                 Match(new_state) => new_state,
             };
-            println!("{:?} state {:?}", d, self.0[state]);
         }
         Match(state)
     }
@@ -203,7 +194,7 @@ mod test {
     }
     #[test]
     fn test_all_redundant_path() {
-        let (trie, all_redundant_pahts, primitive_paths) = construct_pruning_trie();
+        let (trie, all_redundant_pahts, primitive_paths) = construct_pruning_trie(4, 13);
         //trie.check_integrity();
         //    println!("trie: {:#?}", trie);
         println!("len: {:#?}", all_redundant_pahts.len());
@@ -218,9 +209,13 @@ mod test {
             i += 1;
             println!("i: {}", i);
             println!("path: {:?}", path);
-            
-            if trie.match_word((0..random::<usize>() % 10)
-                               .map(|_| rng.choose(&choices).unwrap()).chain(path.iter())) != Redundant {
+
+            if trie.match_word(
+                (0..random::<usize>() % 10)
+                    .map(|_| rng.choose(&choices).unwrap())
+                    .chain(path.iter()),
+            ) != Redundant
+            {
                 non_matching += 1;
                 redundant_not_found.push(path);
             }
@@ -246,17 +241,30 @@ mod test {
             println!("r: {:?}", r);
         }
         println!("trie: {:#?}", trie.0.len());
-        trie.match_word_debug([Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Left].iter());
+        trie.match_word(
+            [
+                Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Left,
+            ]
+                .iter(),
+        );
         assert_eq!(non_matching, 0);
     }
     use self::Dir::*;
     #[test]
     fn test_14() {
         let mut trie = Trie::new();
-        let v1 = vec![Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Right];
-        let v2 = vec![Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Up];
-        let v3 = vec! [Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Down];
-        let v4 = vec! [Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Left];
+        let v1 = vec![
+            Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Right,
+        ];
+        let v2 = vec![
+            Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Up,
+        ];
+        let v3 = vec![
+            Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Down,
+        ];
+        let v4 = vec![
+            Right, Up, Left, Down, Left, Up, Left, Down, Left, Up, Right, Right, Up, Left,
+        ];
         trie.add_word(&v1, false);
         trie.add_word(&v2, false);
         trie.add_word(&v3, false);
@@ -271,7 +279,7 @@ mod test {
     fn test_suffix() {
         let mut trie = Trie::new();
         let v1 = vec![Right, Up, Left, Down, Right];
-        
+
         let v2 = vec![Up, Left, Down];
         trie.add_word(&v1, false);
         println!("trie: {:#?}", trie);
@@ -301,9 +309,7 @@ mod test {
         let mut redundant = HashSet::new();
         let mut primitive = HashSet::new();
         for i in 0..MAX_SIZE_TEST {
-            let v: Vec<Dir> = (0..14)
-                .map(|_| *rng.choose(&choices).unwrap())
-                .collect();
+            let v: Vec<Dir> = (0..14).map(|_| *rng.choose(&choices).unwrap()).collect();
             println!("{:?}", v);
             if !redundant.contains(&v) {
                 if trie.match_word(v.iter()) != Redundant {
