@@ -18,7 +18,7 @@ fn aux<N, C, FN, IN, FH, FS, S, CS, IR, FA, A>(
     success: &FS,
     path: &mut Vec<N>,
     g_cost: C,
-    threeshold: C,
+    threshold: C,
     init_state: S,
     change_state: &CS,
     is_redundant: &IR,
@@ -42,7 +42,7 @@ where
     }
     let mut min_fcost = C::zero();
     let f_cost = g_cost + heuristic(&start);
-    if f_cost > threeshold {
+    if f_cost > threshold {
         return MinFCost(f_cost);
     }
     for (a, c) in neighbours_actions(&start) {
@@ -59,7 +59,7 @@ where
             success,
             path,
             g_cost + c,
-            threeshold,
+            threshold,
             new_state,
             change_state,
             is_redundant,
@@ -101,9 +101,9 @@ where
     FA: Fn(&N, A) -> N,
     A: Copy,
 {
-    let mut threeshold = heuristic(start);
+    let mut threshold = heuristic(start);
     let mut path = Vec::new();
-    while let MinFCost(new_threeshold) = aux(
+    while let MinFCost(new_threshold) = aux(
         start.clone(),
         &neighbours_actions,
         &perform_action,
@@ -111,13 +111,13 @@ where
         &success,
         &mut path,
         C::zero(),
-        threeshold,
+        threshold,
         init_state,
         &change_state,
         &is_redundant,
     ) {
-        threeshold = new_threeshold;
+        threshold = new_threshold;
     }
     //TODO: See final cost
-    return Some((path, threeshold));
+    return Some((path, threshold));
 }
