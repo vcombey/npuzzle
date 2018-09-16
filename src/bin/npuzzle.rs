@@ -2,6 +2,7 @@ extern crate getopts;
 extern crate npuzzle;
 use getopts::Options;
 use npuzzle::idastar::idastar;
+use npuzzle::astar::astar;
 use npuzzle::trie::*;
 use npuzzle::{taquin, taquin::Taquin};
 use std::env;
@@ -40,6 +41,7 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optopt("a", "", "serde file of automaton", "PATH");
+	opts.optopt("g", "alg", "Algorithm", "astar | idastar");
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -58,6 +60,7 @@ fn main() {
     };
 
     let automaton_file = matches.opt_str("a").unwrap();
+	let algorithm = matches.opt_str("g").unwrap();
     let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
 
     let s = match read_file(&taquin_file) {
@@ -78,7 +81,8 @@ fn main() {
         println!("this is unsolvable");
         return;
     }
-    let mut path = idastar(
+    let mut path = match algorithm.as_str() {
+		"idastar" => idastar(
         &taquin,
         |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
         |t, a| t.move_piece(a).unwrap(),
@@ -87,10 +91,61 @@ fn main() {
         TrieType::Match(0),
         |old_state, dir| automaton.change_true_state(old_state, dir),
         |t| *t == TrieType::Redundant,
-    ).unwrap();
+		).unwrap(),
+		"astar" => astar(&taquin,
+        |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+        |t, a| t.move_piece(a).unwrap(),
+        |t| t.manhattan_heuristic(),
+						 |t| t.is_solved()).unwrap(),
+		_ => {
+			eprintln!("Unknown algorithm");
+			print_usage(&program, opts);
+			::std::process::exit(1);
+		}
+	};
 
+	
     path.0.reverse();
     for p in path.0 {
         println!("{}", p);
     }
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+	#[test]
+	fn eq_idastar_astar() {
+		let s = "# This puzzle is solvable
+3
+3 6 5
+1 8 7
+4 2 0
+";
+		let automaton: Trie = deserialize(&fs::read("another_test_pruning").unwrap()[..]).unwrap();
+		let taquin = s.parse::<Taquin>().unwrap();
+		let spiral = Taquin::spiral(taquin.dim());
+		let mut s = taquin::static_spiral.lock().unwrap();
+		(*s) = Taquin::spiral(taquin.dim());
+		drop(s);
+		if !taquin.is_solvable() {
+			println!("this is unsolvable");
+			return;
+		}
+		assert_eq!(idastar(
+			&taquin,
+			|t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+			|t, a| t.move_piece(a).unwrap(),
+			|t| t.manhattan_heuristic(),
+			|t| t.is_solved(),
+			TrieType::Match(0),
+			|old_state, dir| automaton.change_true_state(old_state, dir),
+			|t| *t == TrieType::Redundant,
+		).unwrap(),
+				   astar(&taquin,
+						 |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+						 |t, a| t.move_piece(a).unwrap(),
+						 |t| t.manhattan_heuristic(),
+						 |t| t.is_solved()).unwrap());
+	}
 }

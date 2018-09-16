@@ -1,5 +1,4 @@
 use num_traits::Zero;
-use pruning_automaton::*;
 use std::fmt::Debug;
 use std::hash::Hash;
 

@@ -2,10 +2,10 @@ pub mod construct_pruning_trie;
 pub mod idastar;
 pub mod maxHeap;
 pub mod maxdir;
-pub mod pruning_automaton;
 pub mod solver;
 pub mod taquin;
 pub mod trie;
+pub mod	astar;
 extern crate core;
 extern crate num_traits;
 #[macro_use]
