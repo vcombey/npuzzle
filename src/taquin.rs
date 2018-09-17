@@ -84,6 +84,17 @@ impl Taquin {
         //Neighbours::new(self.clone())
     }
 
+    pub fn neighbours<'a>(&self) -> Vec<Dir> {
+        let mut v = Vec::with_capacity(4);
+        for dir in [Dir::Right, Dir::Up, Dir::Down, Dir::Left].into_iter() {
+            if let Some(t) = self.move_piece(*dir) {
+                v.push((t, *dir));
+            }
+        }
+        v.into_iter().map(|(t, dir)| dir).collect()
+        //Neighbours::new(self.clone())
+    }
+
     /// get indice of piece next 'i' in direction 'dir'.
     fn get_index(dir: &Dir, i: usize, n: usize) -> Option<usize> {
         match *dir {
