@@ -2,10 +2,11 @@ extern crate getopts;
 extern crate npuzzle;
 use getopts::Options;
 use npuzzle::astar::astar;
-use npuzzle::idastar::idastar;
 use npuzzle::greedy_search::greedy;
+use npuzzle::idastar::idastar;
 use npuzzle::trie::*;
 use npuzzle::{taquin, taquin::Taquin};
+use std::str::FromStr;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -20,16 +21,6 @@ fn read_file(filename: &str) -> Result<String, std::io::Error> {
     f.read_to_string(&mut s)?;
     Ok(s)
 }
-
-//fn unwind_solution_path(closed_set: &HashSet<State>, state: &State) {
-//    match state.predecessor {
-//        None => {return;},
-//        Some(p) => {
-//            unwind_solution_path(closed_set, closed_set.get(&(state.move_piece(p).unwrap())).unwrap());
-//            println!("{}", state.get_taquin());
-//        }
-//    }
-//}
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} FILENAME [options]", program);
@@ -66,8 +57,11 @@ fn main() {
         return;
     };
 
-    let automaton_file = matches.opt_str("a").unwrap();
-    let algorithm = matches.opt_str("g").unwrap();
+    let algorithm = match matches.opt_str("g") {
+        Some(a) => a,
+        None => String::from_str("astar").unwrap(),
+    };
+    
     let heuristique: fn(&Taquin) -> u64 = match matches.opt_str("q") {
         Some(s) => match s.as_str() {
             "manhattan" => |t: &Taquin| t.manhattan_heuristic(),
@@ -81,12 +75,11 @@ fn main() {
         None => |t: &Taquin| t.manhattan_heuristic(),
     };
 
-    let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
-
     let s = match read_file(&taquin_file) {
         Ok(s) => s,
         Err(e) => {
             eprintln!("{}", e);
+            ::std::process::exit(1);
             return;
         }
     };
@@ -103,26 +96,34 @@ fn main() {
         return;
     }
     let mut path = match algorithm.as_str() {
-        "idastar" => idastar(
-            &taquin,
-            |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
-            |t, a| t.move_piece(a).unwrap(),
-            heuristique,
-            |t| t.is_solved(),
-            TrieType::Match(0),
-            |old_state, dir| automaton.change_true_state(old_state, dir),
-            |t| *t == TrieType::Redundant,
-        ).unwrap(),
-        "greedy" => greedy(
-            &taquin,
-            |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
-            |t, a| t.move_piece(a).unwrap(),
-            heuristique,
-            |t| t.is_solved(),
-            TrieType::Match(0),
-            |old_state, dir| automaton.change_true_state(old_state, dir),
-            |t| *t == TrieType::Redundant,
-        ).unwrap(),
+        "idastar" => {
+            let automaton_file = matches.opt_str("a").unwrap();
+            let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
+            idastar(
+                &taquin,
+                |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+                |t, a| t.move_piece(a).unwrap(),
+                heuristique,
+                |t| t.is_solved(),
+                TrieType::Match(0),
+                |old_state, dir| automaton.change_true_state(old_state, dir),
+                |t| *t == TrieType::Redundant,
+            ).unwrap()
+        }
+        "greedy" => {
+            let automaton_file = matches.opt_str("a").unwrap();
+            let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
+            greedy(
+                &taquin,
+                |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+                |t, a| t.move_piece(a).unwrap(),
+                heuristique,
+                |t| t.is_solved(),
+                TrieType::Match(0),
+                |old_state, dir| automaton.change_true_state(old_state, dir),
+                |t| *t == TrieType::Redundant,
+            ).unwrap()
+        }
         "astar" => astar(
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
