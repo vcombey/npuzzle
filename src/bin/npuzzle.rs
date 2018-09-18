@@ -86,7 +86,7 @@ fn main() {
             &taquin,
             |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            |t| t.manhattan_heuristic(),
+            |t| t.manhattan_heuristic_linear_conflict(),
             |t| t.is_solved(),
             TrieType::Match(0),
             |old_state, dir| automaton.change_true_state(old_state, dir),
@@ -96,7 +96,9 @@ fn main() {
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            |t| t.manhattan_heuristic(),
+            |t| //t.manhattan_heuristic_linear_conflict()
+			t.manhattan_heuristic_linear_conflict()
+				,
             |t| t.is_solved(),
         ).unwrap(),
         _ => {

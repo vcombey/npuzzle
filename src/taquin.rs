@@ -140,6 +140,7 @@ impl Taquin {
             cur_pos: index_to_go,
         })
     }
+
     pub fn spiral(n: usize) -> Self {
         let mut pieces: Vec<u64> = vec![0; n * n];
         let mut i = 0;
@@ -164,6 +165,7 @@ impl Taquin {
         }
         Self::new(n, pieces)
     }
+
     pub fn iter(&self) -> ::std::slice::Iter<u64> {
         self.pieces.iter()
     }
@@ -172,12 +174,14 @@ impl Taquin {
     pub fn dim(&self) -> usize {
         self.n
     }
+
     /// calc nb move to put the zero at the center
     pub fn nb_move_zero(&self) -> u64 {
         let index_pieces: i64 = self.pieces.iter().position(|&x| x == 0).unwrap() as i64;
         let n: i64 = self.n as i64;
         (n / 2 - index_pieces % n).abs() as u64 + ((n - 1) / 2 - index_pieces / n).abs() as u64
     }
+
     pub fn nb_transposition(&self) -> u64 {
         let mut trans_count = 0;
         let mut pieces = self.pieces.clone();
@@ -191,12 +195,20 @@ impl Taquin {
         }
         trans_count
     }
+
+	/// Get the goal index for the tile at `index`
+	pub fn get_goal_index(&self, index: u64, goal_ref: &Taquin) -> Option<usize> {
+		let nbr = self.pieces[index as usize];
+		goal_ref.iter().position(|&x| x == nbr)
+	}
+
     /// calculate the manhattan distance between two position represended as the
     /// index of the piece
     fn manhattan_distance(index_1: i64, index_2: i64, n: i64) -> u64 {
         (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64
     }
-    pub fn manhattan_heuristic(&self) -> u32 {
+
+    pub fn manhattan_heuristic(&self) -> u64 {
         let mut dist = 0;
         for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
@@ -208,8 +220,89 @@ impl Taquin {
                 );
             }
         }
-        dist as u32
+        dist as u64
     }
+
+	pub fn hamming_distance_heuristic(&self) -> u64 {
+		let mut dist = 0u64;
+
+		for (spiral_piece, piece) in static_spiral.lock().unwrap().iter().zip(self.iter()) {
+			if piece != spiral_piece {
+				dist += 1;
+			}
+		}
+		dist
+	}
+
+	fn is_piece_in_row_goal(&self, current_index: u64, goal_index: u64) -> bool {
+		current_index / (self.n as u64) == goal_index / (self.n as u64)
+	}
+
+	fn are_pieces_aligned(&self, index_1: u64, index_2: u64) -> bool {
+		(index_1 / (self.n as u64) == index_2 / (self.n as u64))
+			|| (index_1 % (self.n as u64) == index_2 % (self.n as u64))
+	}
+
+	fn is_piece_in_column_goal(&self, current_index: u64, goal_index: u64) -> bool {
+		current_index % (self.n as u64) == goal_index % (self.n as u64)
+	}
+
+	fn is_piece_partially_at_goal(&self, current_index: u64, goal_index: u64) -> bool {
+		self.is_piece_in_row_goal(current_index, goal_index)
+			^ self.is_piece_in_column_goal(current_index, goal_index)
+	}
+
+	fn linear_conflict(&self, current_index: u64, goal_index: u64, goal_ref: &Taquin) -> u64 {
+		let mut total_conflicts = 0u64;
+
+		assert_eq!(goal_index, self.get_goal_index(current_index, goal_ref).unwrap() as u64);
+		if self.is_piece_partially_at_goal(current_index as u64, goal_index as u64) {
+				for (search_index, tile_nbr) in self.iter().enumerate().filter(|(index, &x)| *index as u64 != current_index && x != 0) {
+					let search_goal_index = self.get_goal_index(search_index as u64, goal_ref).expect("Send some bad index in get_goal_index");
+					assert!(self.pieces[search_index as usize] != 0);
+					if self.is_piece_partially_at_goal(search_index as u64, search_goal_index as u64)
+						&& self.are_pieces_aligned(current_index as u64, search_goal_index as u64)
+						&& self.are_pieces_aligned(current_index as u64, search_index as u64)
+						&& self.are_pieces_aligned(search_index as u64, goal_index as u64)
+						&& (current_index < search_index as u64 && search_index as u64 <= goal_index
+							|| current_index > search_index as u64 && search_index as u64 >= goal_index)
+						&& ((search_index as u64) < current_index && current_index as u64 <= search_goal_index as u64
+							|| (search_index as u64) > current_index && current_index as u64 >= search_goal_index as u64){
+							total_conflicts += 1;
+							println!("There is a linear conflict between value: {} and value: {}\nTaquin: {}, spiral: {}"
+									 , self.pieces[current_index as usize], self.pieces[search_index as usize], self, goal_ref);
+						}
+				}
+			}
+		if total_conflicts != 0 {
+			println!("There was {} conflicts with current_index: {}", total_conflicts, current_index);
+			;
+		}
+		total_conflicts
+	}
+
+	pub fn manhattan_heuristic_linear_conflict(&self) -> u64 {
+		let mut dist = 0;
+		let mut tmp_dist = 0;
+
+		let spiral = static_spiral.lock().unwrap();
+		for (index_spiral, nb) in spiral.iter().enumerate().filter(|(_, &x)| x != 0) {
+			let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
+			if index_spiral != index_pieces {
+				let tmp = Self::manhattan_distance(
+					index_pieces as i64,
+					index_spiral as i64,
+					self.n as i64,
+				);
+				dist += tmp;
+				tmp_dist += tmp;
+				let linear_conflicts = self.linear_conflict(index_pieces as u64, index_spiral as u64, &spiral);
+				dist += 2 * linear_conflicts;
+			}
+		}
+		println!("heuristic cost would have {} instead is {}", tmp_dist, dist);
+		dist as u64
+	}
 
     /// Returns weither or not the state of the taquin is solvable
     pub fn is_solvable(&self) -> bool {
