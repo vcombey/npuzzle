@@ -6,12 +6,12 @@ use npuzzle::greedy_search::greedy;
 use npuzzle::idastar::idastar;
 use npuzzle::trie::*;
 use npuzzle::{taquin, taquin::Taquin};
-use std::str::FromStr;
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::iter::repeat;
+use std::str::FromStr;
 extern crate bincode;
 use bincode::deserialize;
 
@@ -61,18 +61,18 @@ fn main() {
         Some(a) => a,
         None => String::from_str("astar").unwrap(),
     };
-    
-    let heuristique: fn(&Taquin) -> u64 = match matches.opt_str("q") {
+
+    let heuristique: fn(&Taquin, &Taquin) -> u64 = match matches.opt_str("q") {
         Some(s) => match s.as_str() {
-            "manhattan" => |t: &Taquin| t.manhattan_heuristic(),
-            "linear_conflict" => |t: &Taquin| t.manhattan_heuristic_linear_conflict(),
+            "manhattan" => |t: &Taquin, s: &Taquin| t.manhattan_heuristic(s),
+            "linear_conflict" => |t: &Taquin, s: &Taquin| t.manhattan_heuristic_linear_conflict(s),
             _ => {
                 eprintln!("Unknown algorithm");
                 print_usage(&program, opts);
                 ::std::process::exit(1);
             }
         },
-        None => |t: &Taquin| t.manhattan_heuristic(),
+        None => |t: &Taquin, s: &Taquin| t.manhattan_heuristic(s),
     };
 
     let s = match read_file(&taquin_file) {
@@ -87,11 +87,8 @@ fn main() {
 
     let taquin = s.parse::<Taquin>().unwrap();
     let spiral = Taquin::spiral(taquin.dim());
-    let mut s = taquin::static_spiral.lock().unwrap();
-    (*s) = Taquin::spiral(taquin.dim());
-    drop(s);
 
-    if !taquin.is_solvable() {
+    if !taquin.is_solvable(&spiral) {
         println!("this is unsolvable");
         return;
     }
@@ -101,10 +98,10 @@ fn main() {
             let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
             idastar(
                 &taquin,
-                |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+                |t| t.sorted_neighbours(&spiral).into_iter().zip(repeat(1)),
                 |t, a| t.move_piece(a).unwrap(),
-                heuristique,
-                |t| t.is_solved(),
+                |t| heuristique(t, &spiral),
+                |t| t.is_solved(&spiral),
                 TrieType::Match(0),
                 |old_state, dir| automaton.change_true_state(old_state, dir),
                 |t| *t == TrieType::Redundant,
@@ -115,10 +112,10 @@ fn main() {
             let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
             greedy(
                 &taquin,
-                |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+                |t| t.sorted_neighbours(&spiral).into_iter().zip(repeat(1)),
                 |t, a| t.move_piece(a).unwrap(),
-                heuristique,
-                |t| t.is_solved(),
+                |t| heuristique(t, &spiral),
+                |t| t.is_solved(&spiral),
                 TrieType::Match(0),
                 |old_state, dir| automaton.change_true_state(old_state, dir),
                 |t| *t == TrieType::Redundant,
@@ -128,8 +125,8 @@ fn main() {
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            heuristique,
-            |t| t.is_solved(),
+            |t| heuristique(t, &spiral),
+            |t| t.is_solved(&spiral),
         ).unwrap(),
         _ => {
             eprintln!("Unknown algorithm");
@@ -164,10 +161,7 @@ mod test {
                 deserialize(&fs::read("prunning_automaton_3x3_d10.serde").unwrap()[..]).unwrap();
             let taquin = s.parse::<Taquin>().unwrap();
             let spiral = Taquin::spiral(taquin.dim());
-            let mut s = taquin::static_spiral.lock().unwrap();
-            (*s) = Taquin::spiral(taquin.dim());
-            drop(s);
-            if !taquin.is_solvable() {
+            if !taquin.is_solvable(&spiral) {
                 println!("this is unsolvable");
                 return;
             }
@@ -175,10 +169,10 @@ mod test {
             assert_eq!(
                 idastar(
                     &taquin,
-                    |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+                    |t| t.sorted_neighbours(&spiral).into_iter().zip(repeat(1)),
                     |t, a| t.move_piece(a).unwrap(),
-                    |t| t.manhattan_heuristic(),
-                    |t| t.is_solved(),
+                    |t| t.manhattan_heuristic(&spiral),
+                    |t| t.is_solved(&spiral),
                     TrieType::Match(0),
                     |old_state, dir| automaton.change_true_state(old_state, dir),
                     |t| *t == TrieType::Redundant,
@@ -189,8 +183,8 @@ mod test {
                     &taquin,
                     |t| t.neighbours().into_iter().zip(repeat(1)),
                     |t, a| t.move_piece(a).unwrap(),
-                    |t| t.manhattan_heuristic(),
-                    |t| t.is_solved()
+                    |t| t.manhattan_heuristic(&spiral),
+                    |t| t.is_solved(&spiral),
                 ).unwrap()
                 .0
                 .len()

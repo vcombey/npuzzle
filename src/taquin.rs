@@ -5,10 +5,6 @@ use std::num::ParseIntError;
 use std::str::FromStr;
 use std::sync::Mutex;
 
-lazy_static! {
-    pub static ref static_spiral: Mutex<Taquin> = Mutex::new(Taquin::spiral(2));
-}
-
 #[derive(Copy, Hash, Clone, Debug, PartialEq, Eq)]
 pub enum Dir {
     Right,
@@ -72,14 +68,14 @@ impl Taquin {
         Taquin { n, pieces, cur_pos }
     }
 
-    pub fn sorted_neighbours<'a>(&self) -> Vec<Dir> {
+    pub fn sorted_neighbours<'a>(&self, static_spiral: &Taquin) -> Vec<Dir> {
         let mut v = Vec::with_capacity(4);
         for dir in [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter() {
             if let Some(t) = self.move_piece(*dir) {
                 v.push((t, *dir));
             }
         }
-        v.sort_by_key(|(k, dir)| k.manhattan_heuristic_linear_conflict()); // OK I don't understand why this. yeah I should not have commented it, whatever really
+        v.sort_by_key(|(k, dir)| k.manhattan_heuristic_linear_conflict(static_spiral)); // OK I don't understand why this. yeah I should not have commented it, whatever really
         v.into_iter().map(|(t, dir)| dir).collect() // tomcuh cloning
         //Neighbours::new(self.clone())
     }
@@ -182,10 +178,10 @@ impl Taquin {
         (n / 2 - index_pieces % n).abs() as u64 + ((n - 1) / 2 - index_pieces / n).abs() as u64
     }
 
-    pub fn nb_transposition(&self) -> u64 {
+    pub fn nb_transposition(&self, static_spiral: &Taquin) -> u64 {
         let mut trans_count = 0;
         let mut pieces = self.pieces.clone();
-        for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
+        for (index_spiral, nb) in static_spiral.iter().enumerate() {
             let index_pieces = pieces.iter().position(|&x| x == *nb).unwrap();
 
             if index_spiral != index_pieces {
@@ -208,9 +204,9 @@ impl Taquin {
         (index_1 % n - index_2 % n).abs() as u64 + (index_1 / n - index_2 / n).abs() as u64
     }
 
-    pub fn manhattan_heuristic(&self) -> u64 {
+    pub fn manhattan_heuristic(&self, static_spiral: &Taquin) -> u64 {
         let mut dist = 0;
-        for (index_spiral, nb) in static_spiral.lock().unwrap().iter().enumerate() {
+        for (index_spiral, nb) in static_spiral.iter().enumerate() {
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
             if index_spiral != index_pieces {
                 dist += Self::manhattan_distance(
@@ -223,10 +219,10 @@ impl Taquin {
         dist as u64
     }
 
-	pub fn hamming_distance_heuristic(&self) -> u64 {
+	pub fn hamming_distance_heuristic(&self, static_spiral: &Taquin) -> u64 {
 		let mut dist = 0u64;
 
-		for (spiral_piece, piece) in static_spiral.lock().unwrap().iter().zip(self.iter()) {
+		for (spiral_piece, piece) in static_spiral.iter().zip(self.iter()) {
 			if piece != spiral_piece {
 				dist += 1;
 			}
@@ -281,13 +277,12 @@ impl Taquin {
 		total_conflicts
 	}
 
-	pub fn manhattan_heuristic_linear_conflict(&self) -> u64 {
+	pub fn manhattan_heuristic_linear_conflict(&self, static_spiral: &Taquin) -> u64 {
 		let mut dist = 0;
 		let mut tmp_dist = 0;
 		let mut lcn = 0;
 
-		let spiral = static_spiral.lock().unwrap();
-		for (index_spiral, nb) in spiral.iter().enumerate().filter(|(_, &x)| x != 0) {
+		for (index_spiral, nb) in static_spiral.iter().enumerate().filter(|(_, &x)| x != 0) {
 			let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
 			if index_spiral != index_pieces {
 				let tmp = Self::manhattan_distance(
@@ -297,7 +292,7 @@ impl Taquin {
 				);
 				dist += tmp;
 				tmp_dist += tmp;
-				let linear_conflicts = self.linear_conflict(index_pieces as u64, index_spiral as u64, &spiral);
+				let linear_conflicts = self.linear_conflict(index_pieces as u64, index_spiral as u64, &static_spiral);
 				lcn += linear_conflicts;
 				dist += linear_conflicts;
 			}
@@ -307,18 +302,18 @@ impl Taquin {
 	}
 
     /// Returns weither or not the state of the taquin is solvable
-    pub fn is_solvable(&self) -> bool {
-        let nb_trans = self.nb_transposition();
+    pub fn is_solvable(&self, static_spiral: &Taquin) -> bool {
+        let nb_trans = self.nb_transposition(static_spiral);
         let nb_move = self.nb_move_zero();
 
         // the taquin is solvable if nb_trans and nb_move have the same parity
         (nb_trans + nb_move) % 2 == 0
     }
 
-    pub fn is_solved(&self) -> bool {
+    pub fn is_solved(&self, spiral: &Taquin) -> bool {
         self.pieces
             .iter()
-            .zip(static_spiral.lock().unwrap().iter())
+            .zip(spiral.iter())
             .all(|(x, y)| x == y)
     }
 }
@@ -656,19 +651,14 @@ mod test {
     #[test]
     fn solved() {
         let taquin = Taquin::spiral(42);
-        let mut s = ::taquin::static_spiral.lock().unwrap();
-        (*s) = Taquin::spiral(taquin.dim());
-        drop(s);
-        assert!(taquin.is_solved());
+        let mut s = Taquin::spiral(taquin.dim());
+        assert!(taquin.is_solved(&s));
     }
     #[test]
     fn unsolved() {
-        lazy_static::initialize(&::taquin::static_spiral);
         let taquin = Taquin::new(3, vec![5, 1, 0, 8, 4, 6, 3, 7, 2]);
-        let mut s = ::taquin::static_spiral.lock().unwrap();
-        (*s) = Taquin::spiral(taquin.dim());
-        drop(s);
-        assert!(!taquin.is_solved());
+        let mut s = Taquin::spiral(taquin.dim());
+        assert!(!taquin.is_solved(&s));
     }
     #[test]
     fn oposite() {
