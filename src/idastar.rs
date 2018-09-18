@@ -91,7 +91,7 @@ where
                     return Found;
                 }
                 MinFCost(c) => {
-                    if min_fcost == C::zero() || c < min_fcost {
+                    if min_fcost == C::zero() || (c < min_fcost && c != C::zero()) {
                         min_fcost = c;
                     }
                 }

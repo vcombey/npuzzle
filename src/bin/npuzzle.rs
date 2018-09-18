@@ -41,7 +41,13 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optopt("a", "", "serde file of automaton", "PATH");
-    opts.optopt("g", "alg", "Algorithm", "astar | idastar");
+    opts.optopt("g", "alg", "Algorithm", "(astar | idastar)");
+    opts.optopt(
+        "q",
+        "heurisique",
+        "Heuristique",
+        "(manhattan | linear_conflict)",
+    );
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -61,6 +67,19 @@ fn main() {
 
     let automaton_file = matches.opt_str("a").unwrap();
     let algorithm = matches.opt_str("g").unwrap();
+    let heuristique: fn(&Taquin) -> u64 = match matches.opt_str("q") {
+        Some(s) => match s.as_str() {
+            "manhattan" => |t: &Taquin| t.manhattan_heuristic(),
+            "linear_conflict" => |t: &Taquin| t.manhattan_heuristic_linear_conflict(),
+            _ => {
+                eprintln!("Unknown algorithm");
+                print_usage(&program, opts);
+                ::std::process::exit(1);
+            }
+        },
+        None => |t: &Taquin| t.manhattan_heuristic(),
+    };
+
     let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
 
     let s = match read_file(&taquin_file) {
@@ -77,6 +96,7 @@ fn main() {
     let mut s = taquin::static_spiral.lock().unwrap();
     (*s) = Taquin::spiral(taquin.dim());
     drop(s);
+
     if !taquin.is_solvable() {
         println!("this is unsolvable");
         return;
@@ -86,7 +106,7 @@ fn main() {
             &taquin,
             |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            |t| t.manhattan_heuristic_linear_conflict(),
+            heuristique,
             |t| t.is_solved(),
             TrieType::Match(0),
             |old_state, dir| automaton.change_true_state(old_state, dir),
@@ -96,9 +116,7 @@ fn main() {
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            |t| //t.manhattan_heuristic_linear_conflict()
-			t.manhattan_heuristic_linear_conflict()
-				,
+            heuristique,
             |t| t.is_solved(),
         ).unwrap(),
         _ => {

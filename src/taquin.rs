@@ -79,7 +79,7 @@ impl Taquin {
                 v.push((t, *dir));
             }
         }
-//        v.sort_by_key(|(k, dir)| k.manhattan_heuristic()); // OK I don't understand why this. yeah I should not have commented it, whatever really
+        v.sort_by_key(|(k, dir)| k.manhattan_heuristic_linear_conflict()); // OK I don't understand why this. yeah I should not have commented it, whatever really
         v.into_iter().map(|(t, dir)| dir).collect() // tomcuh cloning
         //Neighbours::new(self.clone())
     }
