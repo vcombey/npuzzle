@@ -79,8 +79,8 @@ impl Taquin {
                 v.push((t, *dir));
             }
         }
-        v.sort_by_key(|(k, dir)| k.manhattan_heuristic());
-        v.into_iter().map(|(t, dir)| dir).collect()
+//        v.sort_by_key(|(k, dir)| k.manhattan_heuristic()); // OK I don't understand why this. yeah I should not have commented it, whatever really
+        v.into_iter().map(|(t, dir)| dir).collect() // tomcuh cloning
         //Neighbours::new(self.clone())
     }
 
@@ -273,7 +273,7 @@ impl Taquin {
 							// 		 , self.pieces[current_index as usize], self.pieces[search_index as usize], self, goal_ref);
 						}
 				}
-			}
+		}
 		if total_conflicts != 0 {
 //			println!("There was {} conflicts with current_index: {}", total_conflicts, current_index);
 			;
