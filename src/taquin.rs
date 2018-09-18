@@ -264,18 +264,18 @@ impl Taquin {
 						&& self.are_pieces_aligned(current_index as u64, search_goal_index as u64)
 						&& self.are_pieces_aligned(current_index as u64, search_index as u64)
 						&& self.are_pieces_aligned(search_index as u64, goal_index as u64)
-						&& (current_index < search_index as u64 && search_index as u64 <= goal_index
+						&& ((current_index < search_index as u64 && search_index as u64 <= goal_index
 							|| current_index > search_index as u64 && search_index as u64 >= goal_index)
-						&& ((search_index as u64) < current_index && current_index as u64 <= search_goal_index as u64
-							|| (search_index as u64) > current_index && current_index as u64 >= search_goal_index as u64){
+						|| ((search_index as u64) < current_index && current_index as u64 <= search_goal_index as u64
+							|| (search_index as u64) > current_index && current_index as u64 >= search_goal_index as u64)) {
 							total_conflicts += 1;
-							println!("There is a linear conflict between value: {} and value: {}\nTaquin: {}, spiral: {}"
-									 , self.pieces[current_index as usize], self.pieces[search_index as usize], self, goal_ref);
+							// println!("There is a linear conflict between value: {} and value: {}\nTaquin: {}, spiral: {}"
+							// 		 , self.pieces[current_index as usize], self.pieces[search_index as usize], self, goal_ref);
 						}
 				}
 			}
 		if total_conflicts != 0 {
-			println!("There was {} conflicts with current_index: {}", total_conflicts, current_index);
+//			println!("There was {} conflicts with current_index: {}", total_conflicts, current_index);
 			;
 		}
 		total_conflicts
@@ -284,6 +284,7 @@ impl Taquin {
 	pub fn manhattan_heuristic_linear_conflict(&self) -> u64 {
 		let mut dist = 0;
 		let mut tmp_dist = 0;
+		let mut lcn = 0;
 
 		let spiral = static_spiral.lock().unwrap();
 		for (index_spiral, nb) in spiral.iter().enumerate().filter(|(_, &x)| x != 0) {
@@ -297,10 +298,11 @@ impl Taquin {
 				dist += tmp;
 				tmp_dist += tmp;
 				let linear_conflicts = self.linear_conflict(index_pieces as u64, index_spiral as u64, &spiral);
-				dist += 2 * linear_conflicts;
+				lcn += linear_conflicts;
+				dist += linear_conflicts;
 			}
 		}
-		println!("heuristic cost would have {} instead is {}", tmp_dist, dist);
+//		println!("heuristic cost would have {} instead is {} with {} lcn", tmp_dist, dist, lcn);
 		dist as u64
 	}
 
