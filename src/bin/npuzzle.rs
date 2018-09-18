@@ -3,6 +3,7 @@ extern crate npuzzle;
 use getopts::Options;
 use npuzzle::astar::astar;
 use npuzzle::idastar::idastar;
+use npuzzle::greedy_search::greedy;
 use npuzzle::trie::*;
 use npuzzle::{taquin, taquin::Taquin};
 use std::env;
@@ -103,6 +104,16 @@ fn main() {
     }
     let mut path = match algorithm.as_str() {
         "idastar" => idastar(
+            &taquin,
+            |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
+            |t, a| t.move_piece(a).unwrap(),
+            heuristique,
+            |t| t.is_solved(),
+            TrieType::Match(0),
+            |old_state, dir| automaton.change_true_state(old_state, dir),
+            |t| *t == TrieType::Redundant,
+        ).unwrap(),
+        "greedy" => greedy(
             &taquin,
             |t| t.sorted_neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),

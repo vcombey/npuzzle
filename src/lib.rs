@@ -1,5 +1,6 @@
 pub mod construct_pruning_trie;
 pub mod idastar;
+pub mod greedy_search;
 pub mod maxHeap;
 pub mod maxdir;
 pub mod solver;
