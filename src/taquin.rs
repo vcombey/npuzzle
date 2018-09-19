@@ -206,7 +206,8 @@ impl Taquin {
 
     pub fn manhattan_heuristic(&self, static_spiral: &Taquin) -> u64 {
         let mut dist = 0;
-        for (index_spiral, nb) in static_spiral.iter().enumerate() {
+        for (index_spiral, nb) in static_spiral.iter().enumerate().filter(|(_, &x)| x != 0) {
+           
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
             if index_spiral != index_pieces {
                 dist += Self::manhattan_distance(
