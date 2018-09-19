@@ -24,14 +24,14 @@ where
     pub taquin: N,
 
     /// Dir of predecessor
-    pub predecessor: Option<Box<State<N,C>>>,
+    pub predecessor: Option<Box<State<N, C>>>,
 
     /// Key of the State
     hash: u64,
 }
 
 impl<N: Clone + Hash, C: Zero + Ord + Copy + Debug> State<N, C> {
-    pub fn new(predecessor: Option<Box<State<N,C>>>, gcost: C, taquin: N) -> State<N, C> {
+    pub fn new(predecessor: Option<Box<State<N, C>>>, gcost: C, taquin: N) -> State<N, C> {
         let mut hash = DefaultHasher::new();
         taquin.hash(&mut hash);
         State {
@@ -118,7 +118,7 @@ where
         let current_state = open_set
             .pop()
             .expect("Tried to pop none existing open state");
-//k        println!("while current_state: {:?}", current_state.taquin);
+        //k        println!("while current_state: {:?}", current_state.taquin);
 
         for (action, cost) in neighbours_actions(&current_state.taquin) {
             let mut state = State::new(
@@ -175,8 +175,5 @@ where
         .pop()
         .expect("Tried to peek none existing open state");
     let total_cost: C = state.gcost + state.hcost;
-    Some((
-        unwind_solution_path(state),
-        total_cost,
-    ))
+    Some((unwind_solution_path(state), total_cost))
 }
