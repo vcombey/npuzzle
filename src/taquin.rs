@@ -412,9 +412,9 @@ impl Visualizable for Taquin {
 					let src_rect = Rect::new((self.get_goal_index(n as u64, goal_taquin).unwrap() % self.n as usize) as i32 * sub_w as i32
 											 , (self.get_goal_index(n as u64, goal_taquin).unwrap() / self.n as usize) as i32 * sub_h as i32, sub_w, sub_h);
 					if self.pieces[n] == 0 {
-						surface.fill_rect(dst_rect, Color::RGB(0, 0, 0));
+						surface.fill_rect(dst_rect, Color::RGB(0, 0, 0))?;
 					} else {
-						image.blit(src_rect, surface, dst_rect);
+						image.blit(src_rect, surface, dst_rect)?;
 					}
 				}
 			},
@@ -426,7 +426,7 @@ impl Visualizable for Taquin {
 				
 				for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
 					let rect_dst = Rect::new(i as i32 * sub_w as i32, j as i32 * sub_w as i32, sub_w, sub_h);
-					surface.fill_rect(rect_dst, colors[n]);
+					surface.fill_rect(rect_dst, colors[n])?;
 				}
 
 			}

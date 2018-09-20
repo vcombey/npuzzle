@@ -17,8 +17,6 @@ extern crate itertools;
 extern crate core;
 extern crate num_traits;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate derive_new;
 extern crate rand;
 #[macro_use]

@@ -1,7 +1,6 @@
 extern crate getopts;
 extern crate npuzzle;
 extern crate sdl2;
-#[macro_use]
 extern crate itertools;
 
 use npuzzle::visualizable::*;
@@ -10,7 +9,7 @@ use npuzzle::astar::astar;
 use npuzzle::greedy_search::greedy;
 use npuzzle::idastar::idastar;
 use npuzzle::trie::*;
-use npuzzle::{taquin, taquin::Taquin};
+use npuzzle::{taquin::Taquin};
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -19,7 +18,7 @@ use std::iter::repeat;
 use std::str::FromStr;
 extern crate bincode;
 use bincode::deserialize;
-use std::time::{Duration, SystemTime};
+use std::time::{SystemTime};
 
 fn read_file(filename: &str) -> Result<String, std::io::Error> {
     let mut f = File::open(filename)?;
@@ -142,16 +141,11 @@ fn main() {
             |t| heuristique(t, &spiral),
             |t| t.is_solved(&spiral),
         ).unwrap(),
-        _ => {
-            eprintln!("Unknown algorithm");
-            print_usage(&program, opts);
-            ::std::process::exit(1);
-        }
         "uniform_cost" => astar(
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            |t| 1,
+            |_t| 1,
             |t| t.is_solved(&spiral),
         ).unwrap(),
         _ => {
@@ -178,7 +172,9 @@ fn main() {
     println!("COMPLEXITY IN TIME:\t{}", sol.1.in_time);
     println!("PATH LEN:\t\t{}", sol.0.len());
 	let image_path = "resources/vcombey_2.jpg";
-	visualize_path(sol.0, image_path, &spiral);
+	if let Err(_) = visualize_path(sol.0, image_path, &spiral) {
+		std::process::exit(1);
+	}
 }
 
 #[cfg(test)]
