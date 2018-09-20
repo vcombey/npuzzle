@@ -18,6 +18,7 @@ use std::iter::repeat;
 use std::str::FromStr;
 extern crate bincode;
 use bincode::deserialize;
+use std::time::{Duration, SystemTime};
 
 fn read_file(filename: &str) -> Result<String, std::io::Error> {
     let mut f = File::open(filename)?;
@@ -37,12 +38,12 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optopt("a", "", "serde file of automaton", "PATH");
-    opts.optopt("g", "alg", "Algorithm", "(astar | idastar)");
+    opts.optopt("g", "alg", "Algorithm", "(astar | idastar | uniform_cost | greedy)");
     opts.optopt(
         "q",
         "heurisique",
         "Heuristique",
-        "(manhattan | linear_conflict)",
+        "(manhattan | linear_conflict | hamming_distance)",
     );
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
@@ -70,6 +71,7 @@ fn main() {
         Some(s) => match s.as_str() {
             "manhattan" => |t: &Taquin, s: &Taquin| t.manhattan_heuristic(s),
             "linear_conflict" => |t: &Taquin, s: &Taquin| t.manhattan_heuristic_linear_conflict(s),
+            "hamming_distance" => |t: &Taquin, s: &Taquin| t.hamming_distance_heuristic(s),
             _ => {
                 eprintln!("Unknown algorithm");
                 print_usage(&program, opts);
@@ -84,19 +86,26 @@ fn main() {
         Err(e) => {
             eprintln!("{}", e);
             ::std::process::exit(1);
-            return;
         }
     };
     // println!("{}", s);
 
-    let taquin = s.parse::<Taquin>().unwrap();
+    let taquin = match s.parse::<Taquin>() {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("{}", e);
+            ::std::process::exit(1);
+        }
+    };
     let spiral = Taquin::spiral(taquin.dim());
 
     if !taquin.is_solvable(&spiral) {
         println!("this is unsolvable");
         return;
     }
-    let mut path = match algorithm.as_str() {
+    let now = SystemTime::now();
+
+    let mut sol = match algorithm.as_str() {
         "idastar" => {
             let automaton_file = matches.opt_str("a").unwrap();
             let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
@@ -111,7 +120,7 @@ fn main() {
                 |t| *t == TrieType::Redundant,
             ).unwrap()
         }
-        "greedy" => {
+        /*"greedy" => {
             let automaton_file = matches.opt_str("a").unwrap();
             let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
             greedy(
@@ -124,7 +133,7 @@ fn main() {
                 |old_state, dir| automaton.change_true_state(old_state, dir),
                 |t| *t == TrieType::Redundant,
             ).unwrap()
-        }
+        }*/
         "astar" => astar(
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
@@ -137,13 +146,37 @@ fn main() {
             print_usage(&program, opts);
             ::std::process::exit(1);
         }
+        "uniform_cost" => astar(
+            &taquin,
+            |t| t.neighbours().into_iter().zip(repeat(1)),
+            |t, a| t.move_piece(a).unwrap(),
+            |t| 1,
+            |t| t.is_solved(&spiral),
+        ).unwrap(),
+        _ => {
+            eprintln!("Unknown algorithm");
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+        }
     };
 
-    path.0.reverse();
-    for p in path.0 {
+    sol.0.reverse();
+
+    println!("PATH: ");
+    for p in &sol.0 {
         println!("{}", p);
     }
-	let image_path = "resources/aalves.jpg";
+    match now.elapsed() {
+        Ok(elapsed) => {
+            println!("RESOLVED TIME:\t\t{} secondes and {} milisecondes", elapsed.as_secs(), elapsed.subsec_millis());
+        }
+        Err(e) => {
+            println!("Error: {}", e);
+        }
+    }
+    println!("COMPLEXITY IN SIZE:\t{}", sol.1.in_size);
+    println!("COMPLEXITY IN TIME:\t{}", sol.1.in_time);
+    println!("PATH LEN:\t\t{}", sol.0.len());
 //	visualize_path(path, image_path);
 }
 

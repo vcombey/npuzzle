@@ -1,6 +1,7 @@
 use num_traits::Zero;
 use std::fmt::Debug;
 use std::hash::Hash;
+use complexity::Complexity;
 
 enum Res<C> {
     Found,
@@ -18,7 +19,7 @@ pub fn idastar<N, C, FN, IN, FH, FS, S, CS, IR, FA, A>(
     init_state: S,
     change_state: CS,
     is_redundant: IR,
-) -> Option<(Vec<N>, C)>
+) -> Option<(Vec<N>, Complexity)>
 where
     N: Clone,
     C: Zero + Ord + Copy + Debug,
@@ -44,6 +45,8 @@ where
         init_state: S,
         change_state: &CS,
         is_redundant: &IR,
+        complexity: &mut Complexity,
+        depth: usize,
     ) -> Res<C>
     where
         N: Clone,
@@ -62,6 +65,9 @@ where
             path.push(start);
             return Found;
         }
+        if depth > complexity.in_size {
+            complexity.in_size = depth;
+        }
         let mut min_fcost = C::zero();
         let f_cost = g_cost + heuristic(&start);
         if f_cost > threshold {
@@ -73,6 +79,7 @@ where
                 continue;
             }
             let n = perform_action(&start, a);
+            complexity.in_time+=1; 
             match aux(
                 n,
                 neighbours_actions,
@@ -85,6 +92,8 @@ where
                 new_state,
                 change_state,
                 is_redundant,
+                complexity,
+                depth + 1,
             ) {
                 Found => {
                     path.push(start);
@@ -100,6 +109,7 @@ where
         return MinFCost(min_fcost);
     }
 
+    let mut complexity = Complexity { in_time : 0, in_size : 0};
     let mut threshold = heuristic(start);
     let mut path = Vec::new();
     while let MinFCost(new_threshold) = aux(
@@ -114,9 +124,11 @@ where
         init_state,
         &change_state,
         &is_redundant,
+        &mut complexity,
+        1,
     ) {
         threshold = new_threshold;
     }
     //TODO: See final cost
-    return Some((path, threshold));
+    return Some((path, complexity));
 }

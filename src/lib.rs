@@ -7,6 +7,7 @@ pub mod maxdir;
 pub mod solver;
 pub mod taquin;
 pub mod trie;
+pub mod complexity;
 pub mod visualizable;
 
 extern crate sdl2;
