@@ -21,7 +21,7 @@ pub trait Visualizable {
 	fn visualize(&self, surface: &mut WindowSurfaceRef, image_ref: Option<&Surface>, goal_taquin: &Taquin) -> Result<(), String>;
 }
 
-pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P) -> Result<(), ()> {
+pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taquin: &Taquin) -> Result<(), ()> {
 	let image = Surface::from_file(image_path).unwrap();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -36,8 +36,7 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P) -> Resul
 	let mut j = 0;
 	let (w, h) = image.size();
 	let (sub_w, sub_h) = (WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3);
-	let mut taquin = Taquin::new(3, (0..9).collect::<Vec<u64>>());
-	let spiral = Taquin::spiral(3);
+	let spiral = goal_taquin.clone();
 	let mut solve_states = path.iter();
 	let mut finished = false;
 	let mut frame_duration = Duration::new(0, 1_000_000_000u32 / 60);

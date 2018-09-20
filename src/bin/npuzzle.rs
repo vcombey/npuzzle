@@ -145,7 +145,7 @@ fn main() {
         println!("{}", p);
     }
 	let image_path = "resources/vcombey_2.jpg";
-	visualize_path(path.0, image_path);
+	visualize_path(path.0, image_path, &spiral);
 }
 
 #[cfg(test)]
