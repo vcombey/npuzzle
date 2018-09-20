@@ -153,6 +153,7 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 				playing_taquin.visualize(&mut window_surface, Some(&image), &spiral);
 				if playing_taquin == spiral {
 					println!("Congratulation, you finished this puzzle");
+					finished = true;
 				}
 			}
 			window_surface.update_window();
