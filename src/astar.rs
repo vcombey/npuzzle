@@ -1,3 +1,4 @@
+use complexity::Complexity;
 use maxHeap::BinaryHeap;
 use num_traits::Zero;
 use std::cmp::{Ord, Ordering, PartialOrd};
@@ -5,7 +6,6 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
-use complexity::Complexity;
 
 #[derive(Clone)]
 struct State<N, C>
@@ -100,10 +100,13 @@ where
     let mut open_set: BinaryHeap<State<N, C>> = BinaryHeap::with_capacity(DEFAULT_OPEN_SET_SIZE);
     let mut closed_set = HashSet::with_capacity(DEFAULT_CLOSED_SET_SIZE);
     open_set.push(State::new(None, C::zero(), start.clone()));
-    let mut complexity = Complexity { in_time : 0, in_size : 0};
+    let mut complexity = Complexity {
+        in_time: 0,
+        in_size: 0,
+    };
 
     while !open_set.is_empty() {
-        complexity.in_time+=1;
+        complexity.in_time += 1;
         if success(
             &open_set
                 .peek()

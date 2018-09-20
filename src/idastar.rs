@@ -1,6 +1,6 @@
+use complexity::Complexity;
 use num_traits::Zero;
 use std::fmt::Debug;
-use complexity::Complexity;
 
 enum Res<C> {
     Found,
@@ -78,7 +78,7 @@ where
                 continue;
             }
             let n = perform_action(&start, a);
-            complexity.in_time+=1; 
+            complexity.in_time += 1;
             match aux(
                 n,
                 neighbours_actions,
@@ -108,7 +108,10 @@ where
         return MinFCost(min_fcost);
     }
 
-    let mut complexity = Complexity { in_time : 0, in_size : 0};
+    let mut complexity = Complexity {
+        in_time: 0,
+        in_size: 0,
+    };
     let mut threshold = heuristic(start);
     let mut path = Vec::new();
     while let MinFCost(new_threshold) = aux(

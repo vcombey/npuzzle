@@ -1,15 +1,15 @@
 extern crate getopts;
+extern crate itertools;
 extern crate npuzzle;
 extern crate sdl2;
-extern crate itertools;
 
-use npuzzle::visualizable::*;
 use getopts::Options;
 use npuzzle::astar::astar;
 use npuzzle::greedy_search::greedy;
 use npuzzle::idastar::idastar;
+use npuzzle::taquin::Taquin;
 use npuzzle::trie::*;
-use npuzzle::{taquin::Taquin};
+use npuzzle::visualizable::*;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -18,7 +18,7 @@ use std::iter::repeat;
 use std::str::FromStr;
 extern crate bincode;
 use bincode::deserialize;
-use std::time::{SystemTime};
+use std::time::SystemTime;
 
 fn read_file(filename: &str) -> Result<String, std::io::Error> {
     let mut f = File::open(filename)?;
@@ -189,10 +189,10 @@ fn main() {
     println!("COMPLEXITY IN SIZE:\t{}", sol.1.in_size);
     println!("COMPLEXITY IN TIME:\t{}", sol.1.in_time);
     println!("PATH LEN:\t\t{}", sol.0.len());
-	let image_path = "resources/vcombey_2.jpg";
-	if let Err(_) = visualize_path(sol.0, image_path, &spiral) {
-		std::process::exit(1);
-	}
+    let image_path = "resources/vcombey_2.jpg";
+    if let Err(_) = visualize_path(sol.0, image_path, &spiral) {
+        std::process::exit(1);
+    }
 }
 
 #[cfg(test)]

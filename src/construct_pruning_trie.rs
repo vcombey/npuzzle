@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use taquin::{Dir, Taquin};
-use trie::{Trie};
+use trie::Trie;
 
 const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;

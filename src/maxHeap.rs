@@ -1,5 +1,5 @@
 use core::fmt;
-use core::mem::{swap};
+use core::mem::swap;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
 

@@ -1,4 +1,5 @@
 pub mod astar;
+pub mod complexity;
 pub mod construct_pruning_trie;
 pub mod greedy_search;
 pub mod idastar;
@@ -8,7 +9,6 @@ pub mod maxdir;
 pub mod solver;
 pub mod taquin;
 pub mod trie;
-pub mod complexity;
 pub mod visualizable;
 
 extern crate sdl2;

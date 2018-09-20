@@ -171,12 +171,11 @@ impl<'a> Trie {
     }
 }
 
-
 #[cfg(test)]
 mod test {
-	use rand::prelude::*;
     use super::*;
     use construct_pruning_trie::construct_pruning_trie;
+    use rand::prelude::*;
     #[test]
     fn test_trie() {
         let mut trie = Trie::new();
