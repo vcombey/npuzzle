@@ -98,7 +98,7 @@ fn main() {
             let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
             idastar(
                 &taquin,
-                |t| t.sorted_neighbours(&spiral).into_iter().zip(repeat(1)),
+                |t| t.neighbours().into_iter().zip(repeat(1)),
                 |t, a| t.move_piece(a).unwrap(),
                 |t| heuristique(t, &spiral),
                 |t| t.is_solved(&spiral),

@@ -12,4 +12,10 @@ serde = "1.0.77"
 getopts = "0.2"
 bincode = "1.0.1"
 serde_derive = "1.0.77"
-sdl2 = "0.31.0"
+image = "*"
+itertools = "*"
+
+[dependencies.sdl2]
+version = "0.31.0"
+default-features = false
+features = ["image"]
