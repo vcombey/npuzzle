@@ -13,6 +13,7 @@ use sdl2::rect::Rect;
 
 
 use npuzzle::{taquin, taquin::Taquin};
+use taquin::Dir;
 use npuzzle::visualizable::*;
 
 
@@ -31,7 +32,8 @@ pub fn main() {
 	let mut j = 0;
 	let (w, h) = image.size();
 	let (sub_w, sub_h) = (WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3);
-	let taquin = Taquin::new(3, (0..9).collect::<Vec<u64>>());
+	let mut taquin = Taquin::new(3, (0..9).collect::<Vec<u64>>());
+	let spiral = Taquin::spiral(3);
     'running: loop {
 		let rect_src = Rect::new(3740, 1500, sub_w, sub_h);
 		let rect_dst = Rect::new(i * sub_w as i32, j * sub_w as i32, sub_w, sub_h);
@@ -46,12 +48,14 @@ pub fn main() {
 					if j == 2 {
 						break;
 					}
+					taquin = taquin.move_piece(Dir::Down).unwrap();
 					j += 1;
                 },
 				Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
 					if j == 0 {
 						break;
 					}
+					taquin = taquin.move_piece(Dir::Up).unwrap();
 					j -= 1;
 					j %= 3;
                 },
@@ -59,6 +63,7 @@ pub fn main() {
 					if i == 0 {
 						break;
 					}
+					taquin = taquin.move_piece(Dir::Left).unwrap();
 					i -= 1;
 					i %= 3;
                 },
@@ -66,6 +71,7 @@ pub fn main() {
 					if i == 2 {
 						break ;
 					}
+					taquin = taquin.move_piece(Dir::Right).unwrap();
 					i += 1;
                  },
                 _ => {}
@@ -76,10 +82,9 @@ pub fn main() {
 			let mut window_surface = window.surface(&event_pump).unwrap();
 			let whole_rect = window_surface.rect();
 			window_surface.fill_rect(whole_rect, sdl2::pixels::Color::RGB(0, 0, 0)).unwrap();
-			taquin.visualize(&mut window_surface).unwrap();
+			taquin.visualize(&mut window_surface, Some(&image), &spiral).unwrap();
+//			image.blit(rect_src, &mut window_surface, rect_dst).unwrap();
 			window_surface.update_window().unwrap();
-//			 image.blit(rect_src, &mut window_surface, rect_dst).unwrap();
-			::std::thread::sleep(Duration::new(3,0));
 		}
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }

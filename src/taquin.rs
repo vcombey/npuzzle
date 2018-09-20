@@ -400,40 +400,56 @@ impl FromStr for Taquin {
 }
 
 impl Visualizable for Taquin {
-	fn visualize(&self, surface: &mut WindowSurfaceRef) -> Result<(), String> {
+	fn visualize(&self, surface: &mut WindowSurfaceRef, image_ref: Option<&Surface>, goal_taquin: &Taquin) -> Result<(), String> {
 		use sdl2::render::{Canvas, RenderTarget};
 		use sdl2::gfx::primitives::DrawRenderer;
-		let colors: Vec<Color> = (0..(self.n * self.n))
-			.map(|x| Color::RGB(x as u8 * (255u8 / ((self.n * self.n) as u8))
-								, x as u8 * (255u8 / ((self.n * self.n) as u8))
-								, x as u8 * (255u8 / ((self.n * self.n) as u8)))).collect();
-		let (sub_w, sub_h) = (WINDOW_WIDTH / self.n as u32, WINDOW_HEIGHT / self.n as u32);
-//		
-		for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
-			let rect_dst = Rect::new(i as i32 * sub_w as i32, j as i32 * sub_w as i32, sub_w, sub_h);
-			surface.fill_rect(rect_dst, colors[n]);
-			
-			println!("{} alpha {}, must be locked {}", n.to_string(), surface.alpha_mod(), surface.must_lock());
-		}
-		println!("{}:------- {}", surface.width(), surface.height());
-		let mut canvas = Canvas::from_surface(Surface::new(surface.width()
-														   , surface.height()
-														   , surface.pixel_format().into()).unwrap()).unwrap();
-		canvas.set_draw_color(Color::RGB(255, 255, 255));
-		canvas.clear();		
-		for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
-			println!("{}:{}", i, j);
-			let c = self.pieces[n].to_string().chars().nth(0).unwrap();
-			canvas.character(i as i16 * sub_w as i16 + sub_w as i16 / 2i16, j as i16 * sub_h as i16 + sub_h as i16 / 2i16 as i16, c, Color::RGB(245, 23, 10)).expect("yo");
 
+		let (sub_w, sub_h) = (WINDOW_WIDTH / self.n as u32, WINDOW_HEIGHT / self.n as u32);
+		match image_ref {
+			Some(image) => {
+				for (n, (j, i)) in iproduct!(0..self.n, 0..self.n).enumerate() {
+					let dst_rect = Rect::new(i as i32 * sub_w as i32, j as i32 * sub_h as i32, sub_w, sub_h);
+					let src_rect = Rect::new((self.get_goal_index(n as u64, goal_taquin).unwrap() % self.n as usize) as i32 * sub_w as i32
+											 , (self.get_goal_index(n as u64, goal_taquin).unwrap() / self.n as usize) as i32 * sub_h as i32, sub_w, sub_h);
+					if self.pieces[n] == 0 {
+						surface.fill_rect(dst_rect, Color::RGB(0, 0, 0));
+					} else {
+						image.blit(src_rect, surface, dst_rect);
+					}
+				}
+			},
+			None => {
+				let colors: Vec<Color> = (0..(self.n * self.n))
+					.map(|x| Color::RGB(x as u8 * (255u8 / ((self.n * self.n) as u8))
+										, x as u8 * (255u8 / ((self.n * self.n) as u8))
+										, x as u8 * (255u8 / ((self.n * self.n) as u8)))).collect();
+				
+				for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
+					let rect_dst = Rect::new(i as i32 * sub_w as i32, j as i32 * sub_w as i32, sub_w, sub_h);
+					surface.fill_rect(rect_dst, colors[n]);
+				}
+
+			}
 		}
-		canvas.present();
-		let tmp_surface = canvas.into_surface();
-		let rect = surface.rect();
-		tmp_surface.blit(tmp_surface.rect(), surface, rect).unwrap();
 		Ok(())
 	}
 }
+		// println!("{}:------- {}", surface.width(), surface.height());
+		// let mut canvas = Canvas::from_surface(Surface::new(surface.width()
+		// 												   , surface.height()
+		// 												   , surface.pixel_format().into()).unwrap()).unwrap();
+		// canvas.set_draw_color(Color::RGB(255, 255, 255));
+		// canvas.clear();		
+		// for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
+		// 	println!("{}:{}", i, j);
+		// 	let c = self.pieces[n].to_string().chars().nth(0).unwrap();
+		// 	canvas.character(i as i16 * sub_w as i16 + sub_w as i16 / 2i16, j as i16 * sub_h as i16 + sub_h as i16 / 2i16 as i16, c, Color::RGB(245, 23, 10)).expect("yo");
+
+		// }
+		// canvas.present();
+		// let tmp_surface = canvas.into_surface();
+		// let rect = surface.rect();
+		// tmp_surface.blit(tmp_surface.rect(), surface, rect).unwrap();
 
 #[derive(Debug, PartialEq)]
 pub enum ParseTaquinError {
