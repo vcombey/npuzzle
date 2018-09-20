@@ -8,6 +8,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::hash::{Hash, Hasher};
+use complexity::Complexity;
 
 #[derive(Clone)]
 struct State<N, C>
@@ -85,7 +86,7 @@ pub fn astar<N, C, FN, IN, FH, FS, FA, A>(
     perform_action: FA,
     heuristic: FH,
     success: FS,
-) -> Option<(Vec<N>, C)>
+) -> Option<(Vec<N>, Complexity)>
 where
     N: Clone + Hash + Eq + Debug,
     C: Zero + Ord + Copy + Debug,
@@ -102,15 +103,16 @@ where
     let mut open_set: BinaryHeap<State<N, C>> = BinaryHeap::with_capacity(DEFAULT_OPEN_SET_SIZE);
     let mut closed_set = HashSet::with_capacity(DEFAULT_CLOSED_SET_SIZE);
     open_set.push(State::new(None, C::zero(), start.clone()));
+    let mut complexity = Complexity { in_time : 0, in_size : 0};
 
     while !open_set.is_empty() {
+        complexity.in_time+=1;
         if success(
             &open_set
                 .peek()
                 .expect("Tried to peek none existing open state")
                 .taquin,
         ) {
-            println!("solution found");
             // the solution is found
             break;
         }
@@ -174,6 +176,6 @@ where
     let state = open_set
         .pop()
         .expect("Tried to peek none existing open state");
-    let total_cost: C = state.gcost + state.hcost;
-    Some((unwind_solution_path(state), total_cost))
+    complexity.in_size = open_set.len() + closed_set.len();
+    Some((unwind_solution_path(state), complexity))
 }

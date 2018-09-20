@@ -224,7 +224,7 @@ impl Taquin {
     pub fn hamming_distance_heuristic(&self, static_spiral: &Taquin) -> u64 {
         let mut dist = 0u64;
 
-        for (spiral_piece, piece) in static_spiral.iter().zip(self.iter()) {
+        for (spiral_piece, piece) in static_spiral.iter().zip(self.iter()).filter(|(_, &x)| x != 0) {
             if piece != spiral_piece {
                 dist += 1;
             }
@@ -348,7 +348,7 @@ impl Display for Taquin {
                 }
             });
 
-        write!(f, "({}\n {})", n, s)
+        write!(f, "{}\n", s)
     }
 }
 
