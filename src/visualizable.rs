@@ -22,16 +22,49 @@ pub trait Visualizable {
 }
 
 pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taquin: &Taquin) -> Result<(), ()> {
-	let image = Surface::from_file(image_path).unwrap();
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
+	if path.len() == 0 {
+		eprintln!("There is no states in the solution path");
+		return Err(())
+	}
+	let image = match Surface::from_file(image_path) {
+		Ok(img) => img,
+		Err(err_string) => {
+			eprintln!("{}", err_string);
+			return Err(())
+		}
+	};
+    let sdl_context = match sdl2::init() {
+		Ok(c) => c,
+		Err(_) => {
+			eprintln!("Failed to init SDL2");
+			return Err(())
+		}
+	};
+    let video_subsystem = match sdl_context.video() {
+		Ok(video) => video,
+		Err(err_string) => {
+			eprintln!("Failed to init the video subsytem: {}", err_string);
+			return Err(())
+		}
+	};
 
-    let mut window = video_subsystem.window("rust-sdl2 demo", WINDOW_WIDTH, WINDOW_HEIGHT)
+    let mut window = match video_subsystem.window("rust-sdl2 demo", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
-        .build()
-        .unwrap();
+        .build() {
+			Ok(win) => win,
+			Err(_) => {
+				eprintln!("Failed to create window");
+				return Err(())
+			}
+		};
 	
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut event_pump = match sdl_context.event_pump() {
+		Ok(e) => e,
+		Err(err_string) => {
+			eprintln!("Failed to get the SDL event pump for current window: {}", err_string);
+			return Err(())
+		}
+	};
     let mut i = 0;
 	let mut j = 0;
 	let (w, h) = image.size();
@@ -96,14 +129,20 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
             }
         }
 		{
-			let mut window_surface = window.surface(&event_pump).unwrap();
+			let mut window_surface = match window.surface(&event_pump) {
+				Ok(surface) => surface,
+				Err(_) => {
+					eprintln!("SDL2 Internal error");
+					return Err(())
+				}
+			};
 			if playing == false {
 				if finished == false {
 					let whole_rect = window_surface.rect();
-					window_surface.fill_rect(whole_rect, sdl2::pixels::Color::RGB(0, 0, 0)).unwrap();
+					window_surface.fill_rect(whole_rect, sdl2::pixels::Color::RGB(0, 0, 0));
 
-					if let Some(current_taquin) = solve_states.next(){
-						current_taquin.visualize(&mut window_surface, Some(&image), &spiral).unwrap();
+					if let Some(current_taquin) = solve_states.next() {
+						current_taquin.visualize(&mut window_surface, Some(&image), &spiral);
 					} else {
 						let window_rect = window_surface.rect();
 						image.blit(image.rect(), &mut window_surface, window_rect);
@@ -111,12 +150,12 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 					}
 				}
 			} else {
-				playing_taquin.visualize(&mut window_surface, Some(&image), &spiral).unwrap();
+				playing_taquin.visualize(&mut window_surface, Some(&image), &spiral);
 				if playing_taquin == spiral {
 					println!("Congratulation, you finished this puzzle");
 				}
 			}
-			window_surface.update_window().unwrap();
+			window_surface.update_window();
 		}
         ::std::thread::sleep(frame_duration);
     }
