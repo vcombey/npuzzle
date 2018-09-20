@@ -4,6 +4,7 @@ use std::hash::{Hash, Hasher};
 use std::num::ParseIntError;
 use std::str::FromStr;
 use std::sync::Mutex;
+use visualizable::*;
 
 #[derive(Copy, Hash, Clone, Debug, PartialEq, Eq)]
 pub enum Dir {
@@ -396,6 +397,42 @@ impl FromStr for Taquin {
 
         Ok(Taquin::new(n, pieces))
     }
+}
+
+impl Visualizable for Taquin {
+	fn visualize(&self, surface: &mut WindowSurfaceRef) -> Result<(), String> {
+		use sdl2::render::{Canvas, RenderTarget};
+		use sdl2::gfx::primitives::DrawRenderer;
+		let colors: Vec<Color> = (0..(self.n * self.n))
+			.map(|x| Color::RGB(x as u8 * (255u8 / ((self.n * self.n) as u8))
+								, x as u8 * (255u8 / ((self.n * self.n) as u8))
+								, x as u8 * (255u8 / ((self.n * self.n) as u8)))).collect();
+		let (sub_w, sub_h) = (WINDOW_WIDTH / self.n as u32, WINDOW_HEIGHT / self.n as u32);
+//		
+		for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
+			let rect_dst = Rect::new(i as i32 * sub_w as i32, j as i32 * sub_w as i32, sub_w, sub_h);
+			surface.fill_rect(rect_dst, colors[n]);
+			
+			println!("{} alpha {}, must be locked {}", n.to_string(), surface.alpha_mod(), surface.must_lock());
+		}
+		println!("{}:------- {}", surface.width(), surface.height());
+		let mut canvas = Canvas::from_surface(Surface::new(surface.width()
+														   , surface.height()
+														   , surface.pixel_format().into()).unwrap()).unwrap();
+		canvas.set_draw_color(Color::RGB(255, 255, 255));
+		canvas.clear();		
+		for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
+			println!("{}:{}", i, j);
+			let c = self.pieces[n].to_string().chars().nth(0).unwrap();
+			canvas.character(i as i16 * sub_w as i16 + sub_w as i16 / 2i16, j as i16 * sub_h as i16 + sub_h as i16 / 2i16 as i16, c, Color::RGB(245, 23, 10)).expect("yo");
+
+		}
+		canvas.present();
+		let tmp_surface = canvas.into_surface();
+		let rect = surface.rect();
+		tmp_surface.blit(tmp_surface.rect(), surface, rect).unwrap();
+		Ok(())
+	}
 }
 
 #[derive(Debug, PartialEq)]

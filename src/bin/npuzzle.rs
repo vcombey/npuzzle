@@ -1,5 +1,9 @@
 extern crate getopts;
 extern crate npuzzle;
+extern crate sdl2;
+#[macro_use]
+extern crate itertools;
+
 use getopts::Options;
 use npuzzle::astar::astar;
 use npuzzle::greedy_search::greedy;

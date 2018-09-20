@@ -7,6 +7,12 @@ pub mod maxdir;
 pub mod solver;
 pub mod taquin;
 pub mod trie;
+pub mod visualizable;
+
+extern crate sdl2;
+#[macro_use]
+extern crate itertools;
+
 extern crate core;
 extern crate num_traits;
 #[macro_use]
