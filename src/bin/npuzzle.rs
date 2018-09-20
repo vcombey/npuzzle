@@ -4,6 +4,7 @@ extern crate sdl2;
 #[macro_use]
 extern crate itertools;
 
+use npuzzle::visualizable::*;
 use getopts::Options;
 use npuzzle::astar::astar;
 use npuzzle::greedy_search::greedy;
@@ -160,9 +161,8 @@ fn main() {
         }
     };
 
-    sol.0.reverse();
-
     println!("PATH: ");
+    sol.0.reverse();
     for p in &sol.0 {
         println!("{}", p);
     }
@@ -177,7 +177,8 @@ fn main() {
     println!("COMPLEXITY IN SIZE:\t{}", sol.1.in_size);
     println!("COMPLEXITY IN TIME:\t{}", sol.1.in_time);
     println!("PATH LEN:\t\t{}", sol.0.len());
-//	visualize_path(path, image_path);
+	let image_path = "resources/vcombey_2.jpg";
+	visualize_path(sol.0, image_path, &spiral);
 }
 
 #[cfg(test)]
