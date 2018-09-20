@@ -4,7 +4,6 @@ pub use sdl2::rect::Rect;
 pub use sdl2::video::WindowSurfaceRef;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::{PixelFormatEnum};
 use std::time::Duration;
 use sdl2::image::LoadSurface;
 use sdl2;
@@ -65,8 +64,6 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 			return Err(())
 		}
 	};
-	let (w, h) = image.size();
-	let (sub_w, sub_h) = (WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3);
 	let spiral = goal_taquin.clone();
 	let mut solve_states = path.iter();
 	let mut finished = false;

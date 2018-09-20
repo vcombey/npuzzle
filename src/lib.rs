@@ -2,6 +2,7 @@ pub mod astar;
 pub mod construct_pruning_trie;
 pub mod greedy_search;
 pub mod idastar;
+#[allow(non_snake_case)]
 pub mod maxHeap;
 pub mod maxdir;
 pub mod solver;

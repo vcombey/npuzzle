@@ -1,6 +1,5 @@
 use std::ops::Index;
 use std::ops::IndexMut;
-use std::slice::Iter;
 use taquin::Dir;
 
 #[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -141,7 +140,7 @@ impl Trie {
 }
 
 impl<'a> Trie {
-    pub fn match_word<I: Iterator<Item = &'a Dir>>(&self, mut word: I) -> TrieType {
+    pub fn match_word<I: Iterator<Item = &'a Dir>>(&self, word: I) -> TrieType {
         let mut state = 0;
         for d in word {
             state = match self.change_state(state, *d) {
@@ -157,7 +156,7 @@ impl<'a> Trie {
         //}
         Match(state)
     }
-    pub fn match_word_no_failure<I: Iterator<Item = &'a Dir>>(&self, mut word: I) -> TrieType {
+    pub fn match_word_no_failure<I: Iterator<Item = &'a Dir>>(&self, word: I) -> TrieType {
         let mut state = 0;
         for d in word {
             state = match self.change_state(state, *d) {
@@ -172,10 +171,10 @@ impl<'a> Trie {
     }
 }
 
-use rand::prelude::*;
 
 #[cfg(test)]
 mod test {
+	use rand::prelude::*;
     use super::*;
     use construct_pruning_trie::construct_pruning_trie;
     #[test]
