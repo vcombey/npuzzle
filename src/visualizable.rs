@@ -4,7 +4,6 @@ pub use sdl2::rect::Rect;
 pub use sdl2::video::WindowSurfaceRef;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::{PixelFormatEnum};
 use std::time::Duration;
 use sdl2::image::LoadSurface;
 use sdl2;
@@ -48,7 +47,7 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 		}
 	};
 
-    let mut window = match video_subsystem.window("rust-sdl2 demo", WINDOW_WIDTH, WINDOW_HEIGHT)
+    let window = match video_subsystem.window("rust-sdl2 demo", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build() {
 			Ok(win) => win,
@@ -65,10 +64,6 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 			return Err(())
 		}
 	};
-    let mut i = 0;
-	let mut j = 0;
-	let (w, h) = image.size();
-	let (sub_w, sub_h) = (WINDOW_WIDTH / 3, WINDOW_HEIGHT / 3);
 	let spiral = goal_taquin.clone();
 	let mut solve_states = path.iter();
 	let mut finished = false;
@@ -77,9 +72,6 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 	let mut playing = false;
 	let mut playing_taquin = path.iter().nth(0).unwrap().clone();
     'running: loop {
-		let rect_src = Rect::new(3740, 1500, sub_w, sub_h);
-		let rect_dst = Rect::new(i * sub_w as i32, j * sub_w as i32, sub_w, sub_h);
-
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
@@ -139,24 +131,47 @@ pub fn visualize_path<P: AsRef<Path>>(path: Vec<Taquin>, image_path: P, goal_taq
 			if playing == false {
 				if finished == false {
 					let whole_rect = window_surface.rect();
-					window_surface.fill_rect(whole_rect, sdl2::pixels::Color::RGB(0, 0, 0));
-
+					match window_surface.fill_rect(whole_rect, sdl2::pixels::Color::RGB(0, 0, 0)) {
+						Ok(_) => (),
+						Err(err_string) => {
+							eprintln!("Internal SDL2 Error: {}", err_string);
+							return Err(())
+						}
+					};
 					if let Some(current_taquin) = solve_states.next() {
-						current_taquin.visualize(&mut window_surface, Some(&image), &spiral);
+						if let Err(err_string) = current_taquin.visualize(&mut window_surface, Some(&image), &spiral) {
+							eprintln!("Internal SDL2 Error: {}", err_string);
+							return Err(())
+						}
 					} else {
 						let window_rect = window_surface.rect();
-						image.blit(image.rect(), &mut window_surface, window_rect);
+						match image.blit(image.rect(), &mut window_surface, window_rect) {
+							Ok(_) => (),
+							Err(err_string) => {
+								eprintln!("Internal SDL2 Error: {}", err_string);
+								return Err(())
+							}
+						}
 						finished = true;
 					}
 				}
 			} else {
-				playing_taquin.visualize(&mut window_surface, Some(&image), &spiral);
+				if let Err(err_string) = playing_taquin.visualize(&mut window_surface, Some(&image), &spiral) {
+					eprintln!("Internal SDL2 Error: {}", err_string);
+					return Err(())
+				}
 				if playing_taquin == spiral {
 					println!("Congratulation, you finished this puzzle");
 					finished = true;
 				}
 			}
-			window_surface.update_window();
+			match window_surface.update_window() {
+				Ok(_) => (),
+				Err(err_string) => {
+					eprintln!("Internal SDL2 Error: {}", err_string);
+					return Err(())
+				}
+			}
 		}
         ::std::thread::sleep(frame_duration);
     }

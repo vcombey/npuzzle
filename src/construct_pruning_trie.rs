@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use taquin::{Dir, Taquin};
-use trie::{Trie, TrieType};
+use trie::{Trie};
 
 const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
 const DEFAULT_OPEN_SET_SIZE: usize = 0x1_0000;
@@ -64,7 +64,6 @@ pub fn construct_pruning_trie(
 
     open_set.push_back(init_node.clone());
     closed_set.insert(spiral, vec![init_node].into());
-    let mut nb_duplicate = 0;
     while let Some(curr) = open_set.pop_front() {
         if curr.path.len() > depth - 1 {
             break;

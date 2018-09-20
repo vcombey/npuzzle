@@ -4,7 +4,6 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::num::ParseIntError;
 use std::str::FromStr;
-use std::sync::Mutex;
 use visualizable::*;
 
 #[derive(Copy, Hash, Clone, Debug, PartialEq, Eq)]
@@ -84,8 +83,8 @@ impl Taquin {
                 v.push((t, *dir));
             }
         }
-        v.sort_by_key(|(k, dir)| k.manhattan_heuristic_linear_conflict(static_spiral)); // OK I don't understand why this. yeah I should not have commented it, whatever really
-        v.into_iter().map(|(t, dir)| dir).collect() // tomcuh cloning
+        v.sort_by_key(|(k, _dir)| k.manhattan_heuristic_linear_conflict(static_spiral)); // OK I don't understand why this. yeah I should not have commented it, whatever really
+        v.into_iter().map(|(_t, dir)| dir).collect() // tomcuh cloning
                                                     //Neighbours::new(self.clone())
     }
 
@@ -96,7 +95,7 @@ impl Taquin {
                 v.push((t, *dir));
             }
         }
-        v.into_iter().map(|(t, dir)| dir).collect()
+        v.into_iter().map(|(_t, dir)| dir).collect()
         //Neighbours::new(self.clone())
     }
 
@@ -270,7 +269,7 @@ impl Taquin {
             self.get_goal_index(current_index, goal_ref).unwrap() as u64
         );
         if self.is_piece_partially_at_goal(current_index as u64, goal_index as u64) {
-            for (search_index, tile_nbr) in self
+            for (search_index, _tile_nbr) in self
                 .iter()
                 .enumerate()
                 .filter(|(index, &x)| *index as u64 != current_index && x != 0)
@@ -306,8 +305,6 @@ impl Taquin {
 
     pub fn manhattan_heuristic_linear_conflict(&self, static_spiral: &Taquin) -> u64 {
         let mut dist = 0;
-        let mut tmp_dist = 0;
-        let mut lcn = 0;
 
         for (index_spiral, nb) in static_spiral.iter().enumerate().filter(|(_, &x)| x != 0) {
             let index_pieces = self.pieces.iter().position(|&x| x == *nb).unwrap();
@@ -318,14 +315,10 @@ impl Taquin {
                     self.n as i64,
                 );
                 dist += tmp;
-                tmp_dist += tmp;
-                let linear_conflicts =
-                    self.linear_conflict(index_pieces as u64, index_spiral as u64, &static_spiral);
-                lcn += linear_conflicts;
+                let linear_conflicts = self.linear_conflict(index_pieces as u64, index_spiral as u64, &static_spiral);
                 dist += linear_conflicts;
             }
         }
-        //		println!("heuristic cost would have {} instead is {} with {} lcn", tmp_dist, dist, lcn);
         dist as u64
     }
 
@@ -413,9 +406,6 @@ impl FromStr for Taquin {
 
 impl Visualizable for Taquin {
 	fn visualize(&self, surface: &mut WindowSurfaceRef, image_ref: Option<&Surface>, goal_taquin: &Taquin) -> Result<(), String> {
-		use sdl2::render::{Canvas, RenderTarget};
-		use sdl2::gfx::primitives::DrawRenderer;
-
 		let (sub_w, sub_h) = (WINDOW_WIDTH / self.n as u32, WINDOW_HEIGHT / self.n as u32);
 		match image_ref {
 			Some(image) => {
@@ -424,9 +414,9 @@ impl Visualizable for Taquin {
 					let src_rect = Rect::new((self.get_goal_index(n as u64, goal_taquin).unwrap() % self.n as usize) as i32 * sub_w as i32
 											 , (self.get_goal_index(n as u64, goal_taquin).unwrap() / self.n as usize) as i32 * sub_h as i32, sub_w, sub_h);
 					if self.pieces[n] == 0 {
-						surface.fill_rect(dst_rect, Color::RGB(0, 0, 0));
+						surface.fill_rect(dst_rect, Color::RGB(0, 0, 0))?;
 					} else {
-						image.blit(src_rect, surface, dst_rect);
+						image.blit(src_rect, surface, dst_rect)?;
 					}
 				}
 			},
@@ -438,7 +428,7 @@ impl Visualizable for Taquin {
 				
 				for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
 					let rect_dst = Rect::new(i as i32 * sub_w as i32, j as i32 * sub_w as i32, sub_w, sub_h);
-					surface.fill_rect(rect_dst, colors[n]);
+					surface.fill_rect(rect_dst, colors[n])?;
 				}
 
 			}
@@ -534,7 +524,6 @@ impl From<ParseIntError> for ParseTaquinError {
 #[cfg(test)]
 mod test {
     use super::*;
-    use lazy_static;
     #[test]
     fn empty() {
         let s = "# This puzzle is solvable

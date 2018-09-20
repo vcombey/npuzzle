@@ -2,6 +2,7 @@ pub mod astar;
 pub mod construct_pruning_trie;
 pub mod greedy_search;
 pub mod idastar;
+#[allow(non_snake_case)]
 pub mod maxHeap;
 pub mod maxdir;
 pub mod solver;
@@ -16,8 +17,6 @@ extern crate itertools;
 
 extern crate core;
 extern crate num_traits;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate derive_new;
 extern crate rand;

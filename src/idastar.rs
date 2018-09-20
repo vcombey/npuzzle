@@ -1,6 +1,5 @@
 use num_traits::Zero;
 use std::fmt::Debug;
-use std::hash::Hash;
 use complexity::Complexity;
 
 enum Res<C> {

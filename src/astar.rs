@@ -3,10 +3,7 @@ use num_traits::Zero;
 use std::cmp::{Ord, Ordering, PartialOrd};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
-use std::f32::INFINITY;
-use std::fmt;
 use std::fmt::Debug;
-use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 use complexity::Complexity;
 
