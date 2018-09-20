@@ -4,6 +4,7 @@ extern crate sdl2;
 #[macro_use]
 extern crate itertools;
 
+use npuzzle::visualizable::*;
 use getopts::Options;
 use npuzzle::astar::astar;
 use npuzzle::greedy_search::greedy;
@@ -140,11 +141,11 @@ fn main() {
     };
 
     path.0.reverse();
-    for p in path.0 {
+    for p in path.0.iter() {
         println!("{}", p);
     }
-	let image_path = "resources/aalves.jpg";
-//	visualize_path(path, image_path);
+	let image_path = "resources/vcombey_2.jpg";
+	visualize_path(path.0, image_path);
 }
 
 #[cfg(test)]
