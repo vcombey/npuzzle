@@ -1,3 +1,4 @@
+use rand::{thread_rng, Rng};
 use std::error::Error;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -62,8 +63,15 @@ impl Hash for Taquin {
 }
 
 impl Taquin {
+    pub fn new_random(n: usize) -> Self {
+        let mut v: Vec<u64> = (0..n*n).map(|x| x as u64).collect();
+        let mut rng = thread_rng();
+        rng.shuffle(&mut v);
+        Self::new(n, v)
+    }
+
     pub fn new(n: usize, pieces: Vec<u64>) -> Self {
-        debug_assert!((0..n).all(|i| pieces.iter().any(|&k| k == i as u64)));
+        debug_assert!((0..n * n).all(|i| pieces.iter().any(|&k| k == i as u64)));
         let cur_pos = pieces.iter().position(|&x| x == 0).unwrap();
         assert_eq!(pieces.len(), n * n);
         Taquin { n, pieces, cur_pos }
@@ -224,7 +232,11 @@ impl Taquin {
     pub fn hamming_distance_heuristic(&self, static_spiral: &Taquin) -> u64 {
         let mut dist = 0u64;
 
-        for (spiral_piece, piece) in static_spiral.iter().zip(self.iter()).filter(|(_, &x)| x != 0) {
+        for (spiral_piece, piece) in static_spiral
+            .iter()
+            .zip(self.iter())
+            .filter(|(_, &x)| x != 0)
+        {
             if piece != spiral_piece {
                 dist += 1;
             }

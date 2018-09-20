@@ -38,8 +38,19 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt("a", "", "serde file of automaton", "PATH");
-    opts.optopt("g", "alg", "Algorithm", "(astar | idastar | uniform_cost | greedy)");
+    opts.optopt("a", "automaton", "serde file of automaton", "PATH");
+    opts.optopt(
+        "r",
+        "random",
+        "generate a random taquin instead of passing a file",
+        "SIZE",
+    );
+    opts.optopt(
+        "g",
+        "alg",
+        "Algorithm",
+        "(astar | idastar | uniform_cost | greedy)",
+    );
     opts.optopt(
         "q",
         "heurisique",
@@ -55,13 +66,6 @@ fn main() {
         print_usage(&program, opts);
         return;
     }
-
-    let taquin_file = if matches.free.len() == 1 {
-        matches.free[0].clone()
-    } else {
-        print_usage(&program, opts);
-        return;
-    };
 
     let algorithm = match matches.opt_str("g") {
         Some(a) => a,
@@ -82,22 +86,32 @@ fn main() {
         None => |t: &Taquin, s: &Taquin| t.manhattan_heuristic(s),
     };
 
-    let s = match read_file(&taquin_file) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("{}", e);
-            ::std::process::exit(1);
+    let taquin = match matches.opt_str("r") {
+        Some(size) => Taquin::new_random(usize::from_str(&size).unwrap()),
+        None => {
+            let taquin_file = if matches.free.len() == 1 {
+                matches.free[0].clone()
+            } else {
+                print_usage(&program, opts);
+                return;
+            };
+            let s = match read_file(&taquin_file) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    ::std::process::exit(1);
+                }
+            };
+            match s.parse::<Taquin>() {
+                Ok(t) => t,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    ::std::process::exit(1);
+                }
+            }
         }
     };
-    // println!("{}", s);
-
-    let taquin = match s.parse::<Taquin>() {
-        Ok(t) => t,
-        Err(e) => {
-            eprintln!("{}", e);
-            ::std::process::exit(1);
-        }
-    };
+    println!("TAQUIN: {}", taquin);
     let spiral = Taquin::spiral(taquin.dim());
 
     if !taquin.is_solvable(&spiral) {
@@ -168,7 +182,11 @@ fn main() {
     }
     match now.elapsed() {
         Ok(elapsed) => {
-            println!("RESOLVED TIME:\t\t{} secondes and {} milisecondes", elapsed.as_secs(), elapsed.subsec_millis());
+            println!(
+                "RESOLVED TIME:\t\t{} secondes and {} milisecondes",
+                elapsed.as_secs(),
+                elapsed.subsec_millis()
+            );
         }
         Err(e) => {
             println!("Error: {}", e);
