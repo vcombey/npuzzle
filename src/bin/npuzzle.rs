@@ -143,6 +143,8 @@ fn main() {
     for p in path.0 {
         println!("{}", p);
     }
+	let image_path = "resources/aalves.jpg";
+//	visualize_path(path, image_path);
 }
 
 #[cfg(test)]

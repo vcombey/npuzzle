@@ -83,7 +83,6 @@ pub fn main() {
 			let whole_rect = window_surface.rect();
 			window_surface.fill_rect(whole_rect, sdl2::pixels::Color::RGB(0, 0, 0)).unwrap();
 			taquin.visualize(&mut window_surface, Some(&image), &spiral).unwrap();
-//			image.blit(rect_src, &mut window_surface, rect_dst).unwrap();
 			window_surface.update_window().unwrap();
 		}
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
