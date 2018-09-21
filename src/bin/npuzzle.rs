@@ -62,6 +62,13 @@ fn main() {
         "Heuristique",
         "(manhattan | linear_conflict | hamming_distance)",
     );
+	opts.optopt(
+        "u",
+        "user",
+        "specify the username of the student you want to solve.",
+        "[valid username at 42]",
+    );
+
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -217,14 +224,47 @@ fn main() {
     println!("COMPLEXITY IN SIZE:\t{}", sol.1.in_size);
     println!("COMPLEXITY IN TIME:\t{}", sol.1.in_time);
     println!("PATH LEN:\t\t{}", sol.0.len());
-    match matches.opt_str("v") {
-        Some(image_path) => {
-            if let Err(_) = visualize_path(sol.0, image_path, &spiral) {
-                std::process::exit(1);
-            }
-        },
-        None => println!("you should realy try the realy super visualisator mode available with -v option"),
-    }
+	match matches.opt_str("u") {
+		Some(username) => {
+			use ::std::process::Command;
+			let output = match Command::new("find")
+                .arg("/sgoinfre/photos_students/")
+                .arg("-iname")
+				.arg(format!("*{}*", username))
+				.arg("-print")
+                .output() {
+					Ok(output) => output,
+					Err(_) => {
+						eprintln!("Failed to find User's photo");
+						::std::process::exit(1);
+					}
+				};
+            let user_image_path = match String::from_utf8(output.stdout) {
+				Ok(s) => s,
+				Err(_) => {
+					eprintln!("Failed to convert command output into a String");
+					::std::process::exit(1);
+				}
+			};
+			if user_image_path.len() == 0 {
+				eprintln!("Failed to find User's photo");
+				::std::process::exit(1);
+			}
+			if let Err(_) = visualize_path(sol.0, user_image_path.trim(), &spiral, true) {
+				std::process::exit(1);
+			}
+		}
+		None => {
+			match matches.opt_str("v") {
+				Some(image_path) => {
+					if let Err(_) = visualize_path(sol.0, image_path, &spiral, false) {
+						std::process::exit(1);
+					}
+				},
+				None => println!("you should realy try the realy super visualisator mode available with -v option"),
+			}
+		}
+	}
 }
 
 #[cfg(test)]

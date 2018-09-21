@@ -13,6 +13,9 @@ use taquin::{Dir, Taquin};
 pub const WINDOW_SIZE: u32 = 1080;
 pub const WINDOW_WIDTH: u32 = 1080;
 pub const WINDOW_HEIGHT: u32 = 1080;
+// pub const WINDOW_WIDTH: u32 = 2500;
+// pub const WINDOW_HEIGHT: u32 = 1380;
+
 use std::path::Path;
 
 pub trait Visualizable {
@@ -24,22 +27,40 @@ pub trait Visualizable {
     ) -> Result<(), String>;
 }
 
-pub fn visualize_path<P: AsRef<Path>>(
+#[allow(unused_must_use)]
+pub fn visualize_path<P: AsRef<Path> + ::std::fmt::Display>(
     path: Vec<Taquin>,
     image_path: P,
     goal_taquin: &Taquin,
+	truncation_42: bool,
 ) -> Result<(), ()> {
     if path.len() == 0 {
         eprintln!("There is no states in the solution path");
         return Err(());
     }
-    let image = match Surface::from_file(image_path) {
+
+	println!("Loading file: {}", image_path);
+    let mut image = match Surface::from_file(image_path) {
         Ok(img) => img,
         Err(err_string) => {
             eprintln!("{}", err_string);
             return Err(());
         }
     };
+
+	if truncation_42 {
+		let mut image_tmp = match Surface::new(WINDOW_WIDTH, WINDOW_HEIGHT, image.pixel_format_enum()) {
+			Ok(tmp) => tmp,
+			Err(err_string) => {
+				eprintln!("{}", err_string);
+				return Err(());
+			}
+		};
+		let image_tmp_rect = image_tmp.rect();
+		image.blit(Rect::new(3650, 1450, WINDOW_WIDTH, WINDOW_HEIGHT), &mut image_tmp, image_tmp_rect);
+		image = image_tmp;
+	}
+	
     let sdl_context = match sdl2::init() {
         Ok(c) => c,
         Err(_) => {
@@ -194,14 +215,14 @@ pub fn visualize_path<P: AsRef<Path>>(
                             return Err(());
                         }
                     } else {
-                        let window_rect = window_surface.rect();
-                        match image.blit(image.rect(), &mut window_surface, window_rect) {
-                            Ok(_) => (),
-                            Err(err_string) => {
-                                eprintln!("Internal SDL2 Error: {}", err_string);
-                                return Err(());
-                            }
-                        }
+						let window_rect = window_surface.rect();
+						match image.blit(image.rect(), &mut window_surface, window_rect) {
+							Ok(_) => (),
+							Err(err_string) => {
+								eprintln!("Internal SDL2 Error: {}", err_string);
+								return Err(());
+							}
+						}
                         finished = true;
                     }
                 }
@@ -213,6 +234,14 @@ pub fn visualize_path<P: AsRef<Path>>(
                     return Err(());
                 }
                 if playing_taquin == spiral {
+					let window_rect = window_surface.rect();
+					match image.blit(image.rect(), &mut window_surface, window_rect) {
+						Ok(_) => (),
+						Err(err_string) => {
+							eprintln!("Internal SDL2 Error: {}", err_string);
+							return Err(());
+						}
+					}
                     println!("Congratulation, you finished this puzzle");
                     finished = true;
                 }
