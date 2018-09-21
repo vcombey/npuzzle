@@ -1,17 +1,15 @@
-use maxHeap::BinaryHeap;
 use num_traits::Zero;
-use std::cmp::{Ord, Ordering, PartialOrd};
-use std::collections::hash_map::DefaultHasher;
+use std::cmp::{Ord};
 use std::collections::HashSet;
 use std::fmt::{Debug, Display};
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash};
 use complexity::Complexity;
 
 pub fn greedy_search<N, C, FN, IN, FH, FS, FA, A>(
     start: &N,
     neighbours_actions: FN,
     perform_action: FA,
-    heuristic: FH,
+    _heuristic: FH,
     success: FS,
 ) -> Option<(Vec<N>, Complexity)>
 where

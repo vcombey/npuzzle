@@ -6,7 +6,6 @@ pub mod idastar;
 #[allow(non_snake_case)]
 pub mod maxHeap;
 pub mod maxdir;
-pub mod solver;
 pub mod taquin;
 pub mod trie;
 pub mod visualizable;

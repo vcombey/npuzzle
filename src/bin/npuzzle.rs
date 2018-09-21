@@ -95,7 +95,17 @@ fn main() {
     };
 
     let taquin = match matches.opt_str("r") {
-        Some(size) => Taquin::new_random(usize::from_str(&size).unwrap()),
+        Some(size) => {
+			let size = match usize::from_str(&size) {
+				Ok(s) => s,
+				Err(e) => {
+                eprintln!("{}", e);
+                print_usage(&program, opts);
+                ::std::process::exit(1);
+				}
+			};
+			Taquin::new_random(size)
+		},
         None => {
             let taquin_file = if matches.free.len() == 1 {
                 matches.free[0].clone()
@@ -130,8 +140,22 @@ fn main() {
 
     let mut sol = match algorithm.as_str() {
         "idastar" => {
-            let automaton_file = matches.opt_str("a").unwrap();
-            let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
+            let automaton_file = match matches.opt_str("a") {
+				Some(file) => file,
+				None => {
+                eprintln!("You should specify a prunning file for idastar");
+                print_usage(&program, opts);
+					::std::process::exit(1);
+				}
+			};
+            let automaton: Trie = match deserialize(&fs::read(automaton_file).unwrap()[..]) {
+				Ok(file) => file,
+				Err(e) => {
+                eprintln!("{}", e);
+                print_usage(&program, opts);
+					::std::process::exit(1);
+				}
+			};
             idastar(
                 &taquin,
                 |t| t.neighbours().into_iter().zip(repeat(1)),

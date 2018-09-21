@@ -32,21 +32,63 @@ fn main() {
         print_usage(&program, opts);
         return;
     }
-    let size = usize::from_str(&matches.opt_str("s").unwrap_or("4".to_string())).unwrap();
-    let depth = usize::from_str(&matches.opt_str("d").unwrap_or("10".to_string())).unwrap();
+    let size = match usize::from_str(&matches.opt_str("s").unwrap_or("4".to_string()))  {
+		Ok(size) => size,
+		Err(e) => {
+            eprintln!("{}", e);
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+		}
+	};
+	let depth = match usize::from_str(&matches.opt_str("d").unwrap_or("10".to_string()))  {
+		Ok(d) => d,
+		Err(e) => {
+            eprintln!("{}", e);
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+		}
+	};
     let output = matches.opt_str("o").unwrap_or(format!(
         "prunning_automaton_{}x{}_d{}.serde",
         size, size, depth
     ));
     println!("size {}, depth {}, output {}", size, depth, output);
     let (trie, _, _) = construct_pruning_trie(size, depth);
-    let encoded: Vec<u8> = serialize(&trie).unwrap();
-    let mut f = File::create(output).unwrap();
-    f.write(&encoded);
+    let encoded: Vec<u8> = match serialize(&trie)  {
+		Ok(file) => file,
+		Err(e) => {
+            eprintln!("{}", e);
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+		}
+	};
+    let mut f = match File::create(output)  {
+		Ok(file) => file,
+		Err(e) => {
+            eprintln!("{}", e);
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+		}
+	};
+    match f.write(&encoded) {
+		Ok(_) => (),
+		Err(e) => {
+            eprintln!("{}", e);
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+		}
+	}
     // 8 bytes for the length of the vector, 4 bytes per float.
     println!("{} | {}", encoded.len(), trie.0.len());
 
-    let decoded: Trie = deserialize(&encoded[..]).unwrap();
+    let decoded: Trie = match deserialize(&encoded[..]) {
+		Ok(file) => file,
+		Err(e) => {
+            eprintln!("{}", e);
+            print_usage(&program, opts);
+            ::std::process::exit(1);
+		}
+	};
 
     assert_eq!(trie, decoded);
 }
