@@ -56,7 +56,7 @@ pub fn visualize_path<P: AsRef<Path>>(
     };
 
     let window = match video_subsystem
-        .window("rust-sdl2 demo", WINDOW_WIDTH, WINDOW_HEIGHT)
+        .window("npuzzle", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
     {
@@ -156,12 +156,14 @@ pub fn visualize_path<P: AsRef<Path>>(
                 } => {
                     if frame_duration >= duration_granularity {
                         frame_duration -= duration_granularity;
-                        println!(
-                            "Duration between states: {};{}",
-                            frame_duration.as_secs(),
-                            frame_duration.subsec_millis()
-                        );
-                    }
+                    } else {
+						frame_duration = Duration::new(0, 0);
+					}
+					println!(
+                        "Duration between states: {};{}",
+                        frame_duration.as_secs(),
+                        frame_duration.subsec_millis()
+                    );
                 }
                 _ => {}
             }

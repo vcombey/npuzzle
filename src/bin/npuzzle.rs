@@ -5,7 +5,7 @@ extern crate sdl2;
 
 use getopts::Options;
 use npuzzle::astar::astar;
-use npuzzle::greedy_search::greedy;
+use npuzzle::greedy_search::greedy_search;
 use npuzzle::idastar::idastar;
 use npuzzle::taquin::Taquin;
 use npuzzle::trie::*;
@@ -54,7 +54,7 @@ fn main() {
         "g",
         "alg",
         "Algorithm",
-        "(astar | idastar | uniform_cost | greedy)",
+        "(astar | idastar | uniform_cost | greedy_search)",
     );
     opts.optopt(
         "q",
@@ -143,20 +143,15 @@ fn main() {
                 |t| *t == TrieType::Redundant,
             ).unwrap()
         }
-        /*"greedy" => {
-            let automaton_file = matches.opt_str("a").unwrap();
-            let automaton: Trie = deserialize(&fs::read(automaton_file).unwrap()[..]).unwrap();
-            greedy(
+        "greedy_search" => {
+            greedy_search(
                 &taquin,
-                |t| t.sorted_neighbours(&spiral).into_iter().zip(repeat(1)),
+                |t| t.sorted_neighbours(&|t| heuristique(t, &spiral)).into_iter().zip(repeat(1)),
                 |t, a| t.move_piece(a).unwrap(),
                 |t| heuristique(t, &spiral),
                 |t| t.is_solved(&spiral),
-                TrieType::Match(0),
-                |old_state, dir| automaton.change_true_state(old_state, dir),
-                |t| *t == TrieType::Redundant,
             ).unwrap()
-        }*/
+        }
         "astar" => astar(
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
@@ -168,7 +163,7 @@ fn main() {
             &taquin,
             |t| t.neighbours().into_iter().zip(repeat(1)),
             |t, a| t.move_piece(a).unwrap(),
-            |_t| 1,
+            |_t| 0,
             |t| t.is_solved(&spiral),
         ).unwrap(),
         _ => {

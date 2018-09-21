@@ -76,14 +76,14 @@ impl Taquin {
         Taquin { n, pieces, cur_pos }
     }
 
-    pub fn sorted_neighbours<'a>(&self, static_spiral: &Taquin) -> Vec<Dir> {
+    pub fn sorted_neighbours<'a, FH: Fn(&Self) -> u64>(&self, heuristic: &FH) -> Vec<Dir> {
         let mut v = Vec::with_capacity(4);
         for dir in [Dir::Right, Dir::Down, Dir::Left, Dir::Up].into_iter() {
             if let Some(t) = self.move_piece(*dir) {
                 v.push((t, *dir));
             }
         }
-        v.sort_by_key(|(k, _dir)| k.manhattan_heuristic_linear_conflict(static_spiral)); // OK I don't understand why this. yeah I should not have commented it, whatever really
+        v.sort_by_key(|(k, _dir)| heuristic(k)); // OK I don't understand why this. yeah I should not have commented it, whatever really
         v.into_iter().map(|(_t, dir)| dir).collect() // tomcuh cloning
                                                      //Neighbours::new(self.clone())
     }
@@ -462,22 +462,6 @@ impl Visualizable for Taquin {
         Ok(())
     }
 }
-// println!("{}:------- {}", surface.width(), surface.height());
-// let mut canvas = Canvas::from_surface(Surface::new(surface.width()
-// 												   , surface.height()
-// 												   , surface.pixel_format().into()).unwrap()).unwrap();
-// canvas.set_draw_color(Color::RGB(255, 255, 255));
-// canvas.clear();
-// for (n, (i, j)) in iproduct!(0..self.n, 0..self.n).enumerate() {
-// 	println!("{}:{}", i, j);
-// 	let c = self.pieces[n].to_string().chars().nth(0).unwrap();
-// 	canvas.character(i as i16 * sub_w as i16 + sub_w as i16 / 2i16, j as i16 * sub_h as i16 + sub_h as i16 / 2i16 as i16, c, Color::RGB(245, 23, 10)).expect("yo");
-
-// }
-// canvas.present();
-// let tmp_surface = canvas.into_surface();
-// let rect = surface.rect();
-// tmp_surface.blit(tmp_surface.rect(), surface, rect).unwrap();
 
 #[derive(Debug, PartialEq)]
 pub enum ParseTaquinError {
