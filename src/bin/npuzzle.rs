@@ -39,6 +39,12 @@ fn main() {
     let mut opts = Options::new();
     opts.optopt("a", "automaton", "serde file of automaton", "PATH");
     opts.optopt(
+        "v",
+        "visu",
+        "visualization mode",
+        "IMAGE_PATH",
+    );
+    opts.optopt(
         "r",
         "random",
         "generate a random taquin instead of passing a file",
@@ -59,7 +65,10 @@ fn main() {
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
-        Err(f) => panic!(f.to_string()),
+        Err(f) => {
+            eprintln!("{}", f);
+            ::std::process::exit(1);
+        },
     };
     if matches.opt_present("h") {
         print_usage(&program, opts);
@@ -189,9 +198,13 @@ fn main() {
     println!("COMPLEXITY IN SIZE:\t{}", sol.1.in_size);
     println!("COMPLEXITY IN TIME:\t{}", sol.1.in_time);
     println!("PATH LEN:\t\t{}", sol.0.len());
-    let image_path = "resources/vcombey_2.jpg";
-    if let Err(_) = visualize_path(sol.0, image_path, &spiral) {
-        std::process::exit(1);
+    match matches.opt_str("v") {
+        Some(image_path) => {
+            if let Err(_) = visualize_path(sol.0, image_path, &spiral) {
+                std::process::exit(1);
+            }
+        },
+        None => println!("you should realy try the realy super visualisator mode available with -v option"),
     }
 }
 
@@ -231,8 +244,8 @@ mod test {
                     |old_state, dir| automaton.change_true_state(old_state, dir),
                     |t| *t == TrieType::Redundant,
                 ).unwrap()
-                .0
-                .len(),
+                    .0
+                    .len(),
                 astar(
                     &taquin,
                     |t| t.neighbours().into_iter().zip(repeat(1)),
@@ -240,8 +253,8 @@ mod test {
                     |t| t.manhattan_heuristic(&spiral),
                     |t| t.is_solved(&spiral),
                 ).unwrap()
-                .0
-                .len()
+                    .0
+                    .len()
             );
         }
     }
