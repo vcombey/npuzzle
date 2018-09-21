@@ -23,9 +23,9 @@ where
     A: Copy,
 {
     const DEFAULT_CLOSED_SET_SIZE: usize = 0x1_0000;
-
-    let mut closed_set = HashSet::with_capacity(DEFAULT_CLOSED_SET_SIZE);
+	
     let mut complexity = Complexity { in_time : 0, in_size : 0};
+    let mut closed_set = HashSet::with_capacity(DEFAULT_CLOSED_SET_SIZE);
 
 	let mut current_state = start.clone();
 	let mut paths = Vec::new();

@@ -19,6 +19,7 @@ use std::str::FromStr;
 extern crate bincode;
 use bincode::deserialize;
 use std::time::SystemTime;
+use npuzzle::complexity::Complexity;
 
 fn read_file(filename: &str) -> Result<String, std::io::Error> {
     let mut f = File::open(filename)?;
@@ -106,11 +107,15 @@ fn main() {
 			let size = match usize::from_str(&size) {
 				Ok(s) => s,
 				Err(e) => {
-                eprintln!("{}", e);
-                print_usage(&program, opts);
-                ::std::process::exit(1);
+					eprintln!("{}", e);
+					print_usage(&program, opts);
+					::std::process::exit(1);
 				}
 			};
+			if size == 0 {
+				eprintln!("Invalid size specified {}", size);
+				::std::process::exit(1);
+			}
 			Taquin::new_random(size)
 		},
         None => {
@@ -145,65 +150,69 @@ fn main() {
     }
     let now = SystemTime::now();
 
-    let mut sol = match algorithm.as_str() {
-        "idastar" => {
-            let automaton_file = match matches.opt_str("a") {
-				Some(file) => file,
-				None => {
-                eprintln!("You should specify a prunning file for idastar");
-                print_usage(&program, opts);
-					::std::process::exit(1);
-				}
-			};
-            let automaton: Trie = match deserialize(&fs::read(automaton_file).unwrap()[..]) {
-				Ok(file) => file,
-				Err(e) => {
-                eprintln!("{}", e);
-                print_usage(&program, opts);
-					::std::process::exit(1);
-				}
-			};
-            idastar(
-                &taquin,
-                |t| t.neighbours().into_iter().zip(repeat(1)),
-                |t, a| t.move_piece(a).unwrap(),
-                |t| heuristique(t, &spiral),
-                |t| t.is_solved(&spiral),
-                TrieType::Match(0),
-                |old_state, dir| automaton.change_true_state(old_state, dir),
-                |t| *t == TrieType::Redundant,
-            ).unwrap()
-        }
-        "greedy_search" => {
-            greedy_search(
-                &taquin,
-                |t| t.sorted_neighbours(&|t| heuristique(t, &spiral)).into_iter().zip(repeat(1)),
-                |t, a| t.move_piece(a).unwrap(),
-                |t| heuristique(t, &spiral),
-                |t| t.is_solved(&spiral),
-            ).unwrap()
-        }
-        "astar" => astar(
-            &taquin,
-            |t| t.neighbours().into_iter().zip(repeat(1)),
-            |t, a| t.move_piece(a).unwrap(),
-            |t| heuristique(t, &spiral),
-            |t| t.is_solved(&spiral),
-        ).unwrap(),
-        "uniform_cost" => astar(
-            &taquin,
-            |t| t.neighbours().into_iter().zip(repeat(1)),
-            |t, a| t.move_piece(a).unwrap(),
-            |_t| 0,
-            |t| t.is_solved(&spiral),
-        ).unwrap(),
-        _ => {
-            eprintln!("Unknown algorithm");
-            print_usage(&program, opts);
-            ::std::process::exit(1);
-        }
-    };
-
+	let mut sol;
+	if !taquin.is_solved(&spiral) {
+		sol = match algorithm.as_str() {
+			"idastar" => {
+				let automaton_file = match matches.opt_str("a") {
+					Some(file) => file,
+					None => {
+						eprintln!("You should specify a prunning file for idastar");
+						print_usage(&program, opts);
+						::std::process::exit(1);
+					}
+				};
+				let automaton: Trie = match deserialize(&fs::read(automaton_file).unwrap()[..]) {
+					Ok(file) => file,
+					Err(e) => {
+						eprintln!("{}", e);
+						print_usage(&program, opts);
+						::std::process::exit(1);
+					}
+				};
+				idastar(
+					&taquin,
+					|t| t.neighbours().into_iter().zip(repeat(1)),
+					|t, a| t.move_piece(a).unwrap(),
+					|t| heuristique(t, &spiral),
+					|t| t.is_solved(&spiral),
+					TrieType::Match(0),
+					|old_state, dir| automaton.change_true_state(old_state, dir),
+					|t| *t == TrieType::Redundant,
+				).unwrap()
+			}
+			"greedy_search" => {
+				greedy_search(
+					&taquin,
+					|t| t.sorted_neighbours(&|t| heuristique(t, &spiral)).into_iter().zip(repeat(1)),
+					|t, a| t.move_piece(a).unwrap(),
+					|t| heuristique(t, &spiral),
+					|t| t.is_solved(&spiral),
+				).unwrap()
+			}
+			"astar" => astar(
+				&taquin,
+				|t| t.neighbours().into_iter().zip(repeat(1)),
+				|t, a| t.move_piece(a).unwrap(),
+				|t| heuristique(t, &spiral),
+				|t| t.is_solved(&spiral),
+			).unwrap(),
+			"uniform_cost" => astar(
+				&taquin,
+				|t| t.neighbours().into_iter().zip(repeat(1)),
+				|t, a| t.move_piece(a).unwrap(),
+				|_t| 0,
+				|t| t.is_solved(&spiral),
+			).unwrap(),
+			_ => {
+				eprintln!("Unknown algorithm");
+				print_usage(&program, opts);
+				::std::process::exit(1);
+			}
+		};
+	} else {
+		sol = (vec![taquin], Complexity { in_time: 0, in_size: 1 });
+	}
     println!("PATH: ");
     sol.0.reverse();
     for p in &sol.0 {
@@ -230,7 +239,7 @@ fn main() {
 			let output = match Command::new("/usr/bin/find")
                 .arg("/sgoinfre/photos_students/")
                 .arg("-iname")
-				.arg(format!("*{}*", username))
+				.arg(format!("*{}.JPG", username))
 				.arg("-print")
                 .output() {
 					Ok(output) => output,
@@ -250,6 +259,13 @@ fn main() {
 				eprintln!("Failed to find User's photo");
 				::std::process::exit(1);
 			}
+			let user_image_path = match user_image_path.split("\n").nth(0) {
+				Some(path) => path,
+				None => {
+					eprintln!("Failed to find User's photo");
+					::std::process::exit(1);
+				}
+			};
 			if let Err(_) = visualize_path(sol.0, user_image_path.trim(), &spiral, true) {
 				std::process::exit(1);
 			}

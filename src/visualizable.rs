@@ -39,7 +39,6 @@ pub fn visualize_path<P: AsRef<Path> + ::std::fmt::Display>(
         return Err(());
     }
 
-	println!("Loading file: {}", image_path);
     let mut image = match Surface::from_file(image_path) {
         Ok(img) => img,
         Err(err_string) => {

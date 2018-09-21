@@ -40,6 +40,12 @@ fn main() {
             ::std::process::exit(1);
 		}
 	};
+
+	if size == 0 {
+		eprintln!("Invalid size specified: {}", size);
+		::std::process::exit(1);
+	}
+	
 	let depth = match usize::from_str(&matches.opt_str("d").unwrap_or("10".to_string()))  {
 		Ok(d) => d,
 		Err(e) => {
