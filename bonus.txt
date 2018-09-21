@@ -1,0 +1,9 @@
+astar
+visu
+apprentissage algorithm made by vcombey
+playing taquin
+heuristique better than manhattan
+full generic graph algorithm (and bullshit)
+sclolus
+sclolus head sooonn !
+random taquin generator
