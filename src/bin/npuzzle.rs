@@ -227,7 +227,7 @@ fn main() {
 	match matches.opt_str("u") {
 		Some(username) => {
 			use ::std::process::Command;
-			let output = match Command::new("find")
+			let output = match Command::new("/usr/bin/find")
                 .arg("/sgoinfre/photos_students/")
                 .arg("-iname")
 				.arg(format!("*{}*", username))
